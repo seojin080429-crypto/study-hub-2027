@@ -659,28 +659,38 @@
             </div>
             
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs mb-2">
-              ⚠️ 구글 드라이브 임베드 제한 (25MB 초과)
+              ⚠️ 구글 공식 웹 미리보기 불가 안내 (25MB 초과)
             </span>
             
             <h3 id="large-card-filename" class="font-bold text-sm sm:text-base text-ink break-all max-w-md leading-snug">파일명.pdf</h3>
-            <p class="text-xs text-text-muted mt-2 max-w-sm leading-relaxed">
-              본 문서는 <strong id="large-card-filesize" class="text-ink">117.43 MB</strong>의 대용량 수험자료입니다.<br>
-              구글 드라이브 정책상 25MB 초과 파일은 작은 화면 내 미리보기가 차단되므로, 아래 원클릭 버튼으로 즉시 열람하실 수 있습니다.
-            </p>
+            
+            <div class="bg-canvas-soft border border-hairline rounded-2xl p-4 my-3 max-w-md text-left text-xs text-text-muted leading-relaxed flex flex-col gap-2">
+              <div class="flex items-start gap-2">
+                <span class="text-base flex-shrink-0">ℹ️</span>
+                <span>본 자료는 용량이 <strong id="large-card-filesize" class="text-ink font-bold">117.43 MB</strong>로 매우 큰 고화질 문서입니다.</span>
+              </div>
+              <div class="flex items-start gap-2 text-amber-900 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200">
+                <span class="text-base flex-shrink-0">⚠️</span>
+                <span><strong>구글 드라이브 본사 정책상</strong> 25MB를 넘는 파일은 구글 웹사이트 자체에서도 온라인 미리보기를 지원하지 않고 <em>"파일이 너무 커서 미리보기를 표시할 수 없습니다"</em> 화면만 띄웁니다.</span>
+              </div>
+              <div class="flex items-start gap-2 text-ink">
+                <span class="text-base flex-shrink-0">✅</span>
+                <span>아래 <strong>[기기로 초고속 다운로드 / PDF 바로 열기]</strong>를 누르시면 기기(아이패드/태블릿/PC)의 내장 고화질 뷰어로 즉시 열람하실 수 있습니다!</span>
+              </div>
+            </div>
 
-            <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs sm:max-w-sm pt-5">
-              <button onclick="openPreviewInNewTab()" class="w-full py-3 px-4 rounded-pill bg-ink hover:bg-[#262626] active:scale-95 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                <span>새 탭에서 원본 열기</span>
+            <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs sm:max-w-md pt-2">
+              <button onclick="downloadPreviewItem()" class="w-full py-3.5 px-5 rounded-pill bg-ink hover:bg-[#262626] active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span>📥 기기로 초고속 다운로드 / PDF 바로 열기</span>
               </button>
-              <button onclick="downloadPreviewItem()" class="w-full py-3 px-4 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] text-ink border border-hairline active:scale-95 font-semibold text-xs flex items-center justify-center gap-2 transition-all">
-                <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                <span>기기로 직접 다운로드</span>
+              <button onclick="openPreviewInNewTab()" class="w-full sm:w-auto py-2.5 px-4 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] text-text-muted hover:text-ink border border-hairline active:scale-95 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all flex-shrink-0" title="구글 드라이브 웹페이지 열기">
+                <span>↗ 구글 웹페이지</span>
               </button>
             </div>
 
-            <p class="text-[11px] text-text-faint mt-4">
-              💡 태블릿(아이패드 등)에서는 '새 탭에서 원본 열기' 시 구글 드라이브 앱 또는 사파리 고화질 뷰어로 자동 연결됩니다.
+            <p class="text-[11px] text-text-faint mt-4 max-w-xs sm:max-w-md">
+              💡 다운로드된 PDF는 아이패드 사파리 / 크롬 / 웨일 / 아크로뱃 리더 등에서 120Hz 고화질로 자유롭게 확대 및 필기하며 학습하실 수 있습니다.
             </p>
           </div>
 
@@ -778,33 +788,42 @@
         <h4 id="large-file-modal-name" class="font-bold text-xs sm:text-sm text-ink break-all leading-snug">파일명</h4>
         <div class="flex items-center gap-2 text-[11px] text-text-muted flex-wrap">
           <span>파일 크기: <strong id="large-file-modal-size" class="text-ink font-bold">0 MB</strong></span>
-          <span class="text-amber-800 font-semibold">(구글 드라이브 임베드 제한 25MB 초과)</span>
+          <span class="text-amber-800 font-semibold">(구글 드라이브 정책상 25MB 초과)</span>
         </div>
       </div>
 
       <!-- Explanation -->
-      <p class="text-xs text-text-muted leading-relaxed">
-        구글 드라이브 보안 정책상 <strong>25MB 초과 대용량 PDF</strong>는 화면 내 작은 미리보기 창에서 <em>"미리보기를 사용할 수 없습니다"</em> 오류가 발생합니다.<br>
-        아래 옵션 중 가장 편하신 방법으로 즉시 열람해 보세요!
-      </p>
+      <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3 text-xs text-amber-950 leading-relaxed flex flex-col gap-1.5">
+        <div class="font-bold flex items-center gap-1.5 text-amber-900">
+          <span>⚠️</span>
+          <span>구글 공식 웹 미리보기 불가 안내</span>
+        </div>
+        <p class="text-[11px] text-amber-900/90 leading-normal">
+          구글 드라이브 본사 정책상 <strong>25MB를 초과하는 고화질 대용량 PDF는 구글 공식 웹사이트 자체에서도 온라인 미리보기를 지원하지 않고 다운로드만 허용</strong>합니다.
+        </p>
+        <p class="text-[11px] text-amber-900/90 leading-normal">
+          아래 <strong>[기기로 초고속 다운로드 / PDF 바로 열기]</strong>를 누르시면 경고창 없이 기기(iPad/PC)로 즉시 다운로드되어 최고화질로 바로 열람하실 수 있습니다!
+        </p>
+      </div>
 
       <!-- Action Buttons -->
       <div class="flex flex-col gap-2 pt-1">
-        <!-- 1. 새 탭에서 구글 드라이브 원본 보기 (추천) -->
-        <button onclick="openLargeFileNewTab()" class="w-full py-3 px-4 rounded-pill bg-ink hover:bg-[#262626] active:scale-95 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-          <span>🚀 구글 드라이브 새 탭으로 보기 (추천)</span>
+        <!-- 1. 기기로 초고속 다운로드 / PDF 바로 열기 (1순위 추천) -->
+        <button onclick="downloadLargeFile()" class="w-full py-3.5 px-4 rounded-pill bg-ink hover:bg-[#262626] active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>📥 기기로 초고속 다운로드 / PDF 바로 열기 (추천)</span>
         </button>
 
-        <!-- 2. 기기로 직접 다운로드 / 바로 열기 -->
-        <button onclick="downloadLargeFile()" class="w-full py-2.5 px-4 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] active:scale-95 text-ink border border-hairline font-semibold text-xs flex items-center justify-center gap-2 transition-all">
-          <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-          <span>📥 기기로 직접 다운로드 / PDF 바로 열기</span>
+        <!-- 2. 화면 분할 미리보기 창 열기 -->
+        <button onclick="proceedToDrawerPreview()" class="w-full py-2.5 px-4 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] active:scale-95 text-ink border border-hairline font-semibold text-xs flex items-center justify-center gap-2 transition-all">
+          <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          <span>👁️ 우측 미리보기 창에 띄우기</span>
         </button>
 
-        <!-- 3. 화면 내 미리보기 시도 -->
-        <button onclick="proceedToDrawerPreview()" class="w-full py-2 px-4 rounded-pill bg-transparent hover:bg-neutral-100 text-text-muted hover:text-ink font-medium text-[11px] transition-colors">
-          화면 내 미리보기 그래도 시도하기
+        <!-- 3. 구글 드라이브 웹페이지 열기 -->
+        <button onclick="openLargeFileNewTab()" class="w-full py-2 px-4 rounded-pill bg-transparent hover:bg-neutral-100 text-text-muted hover:text-ink font-medium text-[11px] transition-colors flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          <span>↗ 구글 드라이브 웹페이지 열기</span>
         </button>
       </div>
 
@@ -2295,7 +2314,7 @@
         const isBookmarked = Boolean(bookmarkInfo);
         const memoText = bookmarkInfo ? (bookmarkInfo.memo || '') : '';
         const driveViewUrl = item.id ? `https://drive.google.com/file/d/${item.id}/view?usp=sharing` : '';
-        const driveDownloadUrl = item.id ? `https://drive.google.com/uc?export=download&confirm=t&id=${item.id}` : '';
+        const driveDownloadUrl = item.id ? `https://drive.usercontent.google.com/download?id=${item.id}&export=download&confirm=t` : '';
         const isRecent = (item.mt && (Math.floor(Date.now() / 1000) - item.mt) < (7 * 86400));
         const escapedName = item.n.replace(/'/g, "\\'");
         const escapedKey = itemKey.replace(/'/g, "\\'");
@@ -2513,6 +2532,12 @@
         return;
       }
 
+      const fileSize = parseFloat(item.s) || 0;
+      if (fileSize >= 25) {
+        openLargeFileModal(item);
+        return;
+      }
+
       openPDFPreviewDrawerDirect(item);
     }
 
@@ -2707,7 +2732,7 @@
 
     function downloadPreviewItem() {
       if (!currentPreviewItem || !currentPreviewItem.id) return;
-      window.open(`https://drive.google.com/uc?export=download&confirm=t&id=${currentPreviewItem.id}`, '_blank', 'noopener,noreferrer');
+      window.open(`https://drive.usercontent.google.com/download?id=${currentPreviewItem.id}&export=download&confirm=t`, '_blank', 'noopener,noreferrer');
     }
 
     window.addEventListener('keydown', (e) => {
@@ -2737,7 +2762,7 @@
 해당 자료는 현재 구글 드라이브와 동기화 진행 중입니다.`);
         return;
       }
-      const url = `https://drive.google.com/uc?export=download&confirm=t&id=${itemId}`;
+      const url = `https://drive.usercontent.google.com/download?id=${itemId}&export=download&confirm=t`;
       window.open(url, '_blank', 'noopener,noreferrer');
     }
 

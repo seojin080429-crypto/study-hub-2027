@@ -649,28 +649,50 @@
           </div>
         </div>
 
-        <!-- Iframe Container with Loading Skeleton -->
-        <div class="relative flex-1 w-full h-full bg-[#323639] overflow-hidden flex flex-col">
-          <!-- 대용량 파일 구글 임베드 불가 시 즉시 안내 배너 -->
-          <div id="drawer-large-file-notice" class="hidden bg-amber-50 border-b border-amber-200 px-3.5 py-2 flex items-center justify-between text-xs text-amber-900 gap-2 flex-wrap flex-shrink-0 z-20">
-            <div class="flex items-center gap-1.5 truncate">
-              <span>⚠️</span>
-              <span class="font-medium truncate">대용량 파일(25MB+)로 인해 구글 미리보기가 안 보일 경우:</span>
+        <!-- Iframe & Fallback Container -->
+        <div class="relative flex-1 w-full h-full bg-[#fbfbfd] overflow-hidden flex flex-col">
+
+          <!-- CASE 1: 대용량 파일 전용 안내 카드 (25MB 이상일 때 Google iframe 대신 표시하여 검은 오류 화면 원천 차단) -->
+          <div id="drawer-large-file-card" class="hidden flex-1 w-full h-full flex flex-col items-center justify-center p-6 text-center bg-white overflow-y-auto">
+            <div class="w-16 h-16 rounded-full bg-canvas-soft border border-hairline flex items-center justify-center text-3xl shadow-2xs mb-3">
+              📁
             </div>
-            <div class="flex items-center gap-1.5 flex-shrink-0">
-              <button onclick="openPreviewInNewTab()" class="px-2.5 py-1 bg-ink text-white font-bold rounded-pill text-[11px] active:scale-95 transition-transform">새 탭으로 열기</button>
-              <button onclick="downloadPreviewItem()" class="px-2.5 py-1 bg-white border border-amber-300 text-amber-900 font-bold rounded-pill text-[11px] active:scale-95 transition-transform">다운로드</button>
+            
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs mb-2">
+              ⚠️ 구글 드라이브 임베드 제한 (25MB 초과)
+            </span>
+            
+            <h3 id="large-card-filename" class="font-bold text-sm sm:text-base text-ink break-all max-w-md leading-snug">파일명.pdf</h3>
+            <p class="text-xs text-text-muted mt-2 max-w-sm leading-relaxed">
+              본 문서는 <strong id="large-card-filesize" class="text-ink">117.43 MB</strong>의 대용량 수험자료입니다.<br>
+              구글 드라이브 정책상 25MB 초과 파일은 작은 화면 내 미리보기가 차단되므로, 아래 원클릭 버튼으로 즉시 열람하실 수 있습니다.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs sm:max-w-sm pt-5">
+              <button onclick="openPreviewInNewTab()" class="w-full py-3 px-4 rounded-pill bg-ink hover:bg-[#262626] active:scale-95 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                <span>새 탭에서 원본 열기</span>
+              </button>
+              <button onclick="downloadPreviewItem()" class="w-full py-3 px-4 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] text-ink border border-hairline active:scale-95 font-semibold text-xs flex items-center justify-center gap-2 transition-all">
+                <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span>기기로 직접 다운로드</span>
+              </button>
             </div>
+
+            <p class="text-[11px] text-text-faint mt-4">
+              💡 태블릿(아이패드 등)에서는 '새 탭에서 원본 열기' 시 구글 드라이브 앱 또는 사파리 고화질 뷰어로 자동 연결됩니다.
+            </p>
           </div>
 
-          <div class="relative flex-1 w-full h-full">
+          <!-- CASE 2: 일반 파일 (25MB 미만) iframe 컨테이너 -->
+          <div id="drawer-iframe-container" class="relative flex-1 w-full h-full bg-[#323639]">
             <div id="pdf-preview-loading" class="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-2.5 p-4 text-center z-10 transition-opacity duration-200">
               <div class="w-7 h-7 border-2 border-ink/20 border-t-ink rounded-full animate-spin"></div>
               <div id="pdf-preview-loading-text" class="text-xs font-semibold text-text-muted">PDF 문서를 불러오는 중입니다...</div>
-              <p id="pdf-preview-loading-subtext" class="text-[11px] text-text-faint hidden">로딩이 지연되거나 미리보기가 제한될 경우 상단 '새탭' 또는 '다운'을 이용해 주세요.</p>
             </div>
             <iframe id="pdf-preview-frame" src="about:blank" class="w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
+
         </div>
 
       </aside>
@@ -2491,13 +2513,6 @@
         return;
       }
 
-      const fileSize = parseFloat(item.s) || 0;
-      // 25MB 이상 대용량 파일: 구글 임베드 제한 안내 모달 표시
-      if (fileSize >= 25) {
-        openLargeFileModal(item);
-        return;
-      }
-
       openPDFPreviewDrawerDirect(item);
     }
 
@@ -2508,7 +2523,8 @@
       const mainArea = document.getElementById('main-content-area');
       const frame = document.getElementById('pdf-preview-frame');
       const loader = document.getElementById('pdf-preview-loading');
-      const largeNotice = document.getElementById('drawer-large-file-notice');
+      const largeCard = document.getElementById('drawer-large-file-card');
+      const iframeContainer = document.getElementById('drawer-iframe-container');
       const fileSize = parseFloat(item.s) || 0;
 
       // Update drawer UI texts & badges
@@ -2533,11 +2549,6 @@
 
       updatePreviewDrawerActionButtons();
 
-      if (largeNotice) {
-        if (fileSize >= 25) largeNotice.classList.remove('hidden');
-        else largeNotice.classList.add('hidden');
-      }
-
       // Show drawer
       if (drawer) {
         drawer.classList.remove('hidden');
@@ -2560,31 +2571,45 @@
         mainArea.classList.add('lg:max-w-[1700px]');
       }
 
-      // Load Iframe with loader
-      if (loader) {
-        const loadingText = document.getElementById('pdf-preview-loading-text');
-        const loadingSub = document.getElementById('pdf-preview-loading-subtext');
-        if (loadingText) {
-          loadingText.textContent = (fileSize >= 25)
-            ? `대용량 문서 (${item.s} MB)를 불러오는 중입니다...`
-            : 'PDF 문서를 불러오는 중입니다...';
+      // File Size Decision: 25MB 이상은 Google iframe의 검은 에러 창을 차단하고 자체 대용량 안내 카드 표시
+      if (fileSize >= 25) {
+        if (largeCard) {
+          largeCard.classList.remove('hidden');
+          largeCard.classList.add('flex');
+          const nameEl = document.getElementById('large-card-filename');
+          const sizeEl = document.getElementById('large-card-filesize');
+          if (nameEl) nameEl.textContent = item.n;
+          if (sizeEl) sizeEl.textContent = item.s + ' MB';
         }
-        if (loadingSub) {
-          if (fileSize >= 25) loadingSub.classList.remove('hidden');
-          else loadingSub.classList.add('hidden');
+        if (iframeContainer) {
+          iframeContainer.classList.add('hidden');
         }
-        loader.classList.remove('opacity-0', 'pointer-events-none');
-        loader.classList.add('opacity-100');
-      }
-      const embedUrl = `https://drive.google.com/file/d/${item.id}/preview`;
-      if (frame) {
-        frame.onload = () => {
-          if (loader) {
-            loader.classList.remove('opacity-100');
-            loader.classList.add('opacity-0', 'pointer-events-none');
-          }
-        };
-        frame.src = embedUrl;
+        if (frame) {
+          frame.src = 'about:blank';
+        }
+      } else {
+        // 일반 파일 (25MB 미만): iframe 정상 임베드
+        if (largeCard) {
+          largeCard.classList.add('hidden');
+          largeCard.classList.remove('flex');
+        }
+        if (iframeContainer) {
+          iframeContainer.classList.remove('hidden');
+        }
+        if (loader) {
+          loader.classList.remove('opacity-0', 'pointer-events-none');
+          loader.classList.add('opacity-100');
+        }
+        const embedUrl = `https://drive.google.com/file/d/${item.id}/preview`;
+        if (frame) {
+          frame.onload = () => {
+            if (loader) {
+              loader.classList.remove('opacity-100');
+              loader.classList.add('opacity-0', 'pointer-events-none');
+            }
+          };
+          frame.src = embedUrl;
+        }
       }
 
       highlightActivePreviewCard();
@@ -2595,6 +2620,7 @@
       const mainPane = document.getElementById('catalog-main-pane');
       const mainArea = document.getElementById('main-content-area');
       const frame = document.getElementById('pdf-preview-frame');
+      const largeCard = document.getElementById('drawer-large-file-card');
 
       if (drawer) {
         drawer.classList.add('hidden');
@@ -2610,6 +2636,10 @@
       }
       if (frame) {
         frame.src = 'about:blank';
+      }
+      if (largeCard) {
+        largeCard.classList.add('hidden');
+        largeCard.classList.remove('flex');
       }
       currentPreviewItem = null;
       highlightActivePreviewCard();

@@ -650,13 +650,27 @@
         </div>
 
         <!-- Iframe Container with Loading Skeleton -->
-        <div class="relative flex-1 w-full h-full bg-[#323639] overflow-hidden">
-          <div id="pdf-preview-loading" class="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-2.5 p-4 text-center z-10 transition-opacity duration-200">
-            <div class="w-7 h-7 border-2 border-ink/20 border-t-ink rounded-full animate-spin"></div>
-            <div id="pdf-preview-loading-text" class="text-xs font-semibold text-text-muted">PDF 문서를 불러오는 중입니다...</div>
-            <p id="pdf-preview-loading-subtext" class="text-[11px] text-text-faint hidden">로딩이 지연되거나 미리보기가 제한될 경우 상단 '새탭' 또는 '다운'을 이용해 주세요.</p>
+        <div class="relative flex-1 w-full h-full bg-[#323639] overflow-hidden flex flex-col">
+          <!-- 대용량 파일 구글 임베드 불가 시 즉시 안내 배너 -->
+          <div id="drawer-large-file-notice" class="hidden bg-amber-50 border-b border-amber-200 px-3.5 py-2 flex items-center justify-between text-xs text-amber-900 gap-2 flex-wrap flex-shrink-0 z-20">
+            <div class="flex items-center gap-1.5 truncate">
+              <span>⚠️</span>
+              <span class="font-medium truncate">대용량 파일(25MB+)로 인해 구글 미리보기가 안 보일 경우:</span>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button onclick="openPreviewInNewTab()" class="px-2.5 py-1 bg-ink text-white font-bold rounded-pill text-[11px] active:scale-95 transition-transform">새 탭으로 열기</button>
+              <button onclick="downloadPreviewItem()" class="px-2.5 py-1 bg-white border border-amber-300 text-amber-900 font-bold rounded-pill text-[11px] active:scale-95 transition-transform">다운로드</button>
+            </div>
           </div>
-          <iframe id="pdf-preview-frame" src="about:blank" class="w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+          <div class="relative flex-1 w-full h-full">
+            <div id="pdf-preview-loading" class="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-2.5 p-4 text-center z-10 transition-opacity duration-200">
+              <div class="w-7 h-7 border-2 border-ink/20 border-t-ink rounded-full animate-spin"></div>
+              <div id="pdf-preview-loading-text" class="text-xs font-semibold text-text-muted">PDF 문서를 불러오는 중입니다...</div>
+              <p id="pdf-preview-loading-subtext" class="text-[11px] text-text-faint hidden">로딩이 지연되거나 미리보기가 제한될 경우 상단 '새탭' 또는 '다운'을 이용해 주세요.</p>
+            </div>
+            <iframe id="pdf-preview-frame" src="about:blank" class="w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
         </div>
 
       </aside>
@@ -723,6 +737,57 @@
   <!-- ======================================================== -->
   <!-- MODALS (Mobbin Dialogs: Zero Glow, Crisp Hairline, Pill CTA) -->
   <!-- ======================================================== -->
+
+  <!-- MODAL: Large File Guidance Modal -->
+  <div id="modal-large-file" class="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 transition-opacity">
+    <div class="bg-white border border-hairline rounded-container max-w-md w-full flex flex-col text-ink overflow-hidden shadow-2xl p-5 sm:p-6 gap-4">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-hairline-soft pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📁</span>
+          <span class="px-2.5 py-0.5 rounded-pill bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs">대용량 자료 열람 안내</span>
+        </div>
+        <button onclick="closeLargeFileModal()" class="w-8 h-8 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] text-text-muted hover:text-ink flex items-center justify-center text-sm font-bold transition-colors">&times;</button>
+      </div>
+
+      <!-- File Info Box -->
+      <div class="bg-canvas-soft border border-hairline rounded-2xl p-3.5 flex flex-col gap-1.5">
+        <h4 id="large-file-modal-name" class="font-bold text-xs sm:text-sm text-ink break-all leading-snug">파일명</h4>
+        <div class="flex items-center gap-2 text-[11px] text-text-muted flex-wrap">
+          <span>파일 크기: <strong id="large-file-modal-size" class="text-ink font-bold">0 MB</strong></span>
+          <span class="text-amber-800 font-semibold">(구글 드라이브 임베드 제한 25MB 초과)</span>
+        </div>
+      </div>
+
+      <!-- Explanation -->
+      <p class="text-xs text-text-muted leading-relaxed">
+        구글 드라이브 보안 정책상 <strong>25MB 초과 대용량 PDF</strong>는 화면 내 작은 미리보기 창에서 <em>"미리보기를 사용할 수 없습니다"</em> 오류가 발생합니다.<br>
+        아래 옵션 중 가장 편하신 방법으로 즉시 열람해 보세요!
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col gap-2 pt-1">
+        <!-- 1. 새 탭에서 구글 드라이브 원본 보기 (추천) -->
+        <button onclick="openLargeFileNewTab()" class="w-full py-3 px-4 rounded-pill bg-ink hover:bg-[#262626] active:scale-95 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          <span>🚀 구글 드라이브 새 탭으로 보기 (추천)</span>
+        </button>
+
+        <!-- 2. 기기로 직접 다운로드 / 바로 열기 -->
+        <button onclick="downloadLargeFile()" class="w-full py-2.5 px-4 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] active:scale-95 text-ink border border-hairline font-semibold text-xs flex items-center justify-center gap-2 transition-all">
+          <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>📥 기기로 직접 다운로드 / PDF 바로 열기</span>
+        </button>
+
+        <!-- 3. 화면 내 미리보기 시도 -->
+        <button onclick="proceedToDrawerPreview()" class="w-full py-2 px-4 rounded-pill bg-transparent hover:bg-neutral-100 text-text-muted hover:text-ink font-medium text-[11px] transition-colors">
+          화면 내 미리보기 그래도 시도하기
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <!-- MODAL: Bookmark / Print Memo -->
   <div id="modal-bookmark-memo" class="fixed inset-0 z-50 bg-ink/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
@@ -2374,6 +2439,45 @@
     // SIDE PDF PREVIEW DRAWER (Split-view Engine)
     // ==========================================
     let currentPreviewItem = null;
+    let pendingLargeItem = null;
+
+    function openLargeFileModal(item) {
+      pendingLargeItem = item;
+      const modal = document.getElementById('modal-large-file');
+      const nameEl = document.getElementById('large-file-modal-name');
+      const sizeEl = document.getElementById('large-file-modal-size');
+      if (nameEl) nameEl.textContent = item.n;
+      if (sizeEl) sizeEl.textContent = item.s + ' MB';
+      if (modal) modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeLargeFileModal() {
+      const modal = document.getElementById('modal-large-file');
+      if (modal) modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+      pendingLargeItem = null;
+    }
+
+    function openLargeFileNewTab() {
+      if (!pendingLargeItem) return;
+      const url = `https://drive.google.com/file/d/${pendingLargeItem.id}/view?usp=sharing`;
+      window.open(url, '_blank');
+      closeLargeFileModal();
+    }
+
+    function downloadLargeFile() {
+      if (!pendingLargeItem) return;
+      downloadItemFile(pendingLargeItem.id, pendingLargeItem.n);
+      closeLargeFileModal();
+    }
+
+    function proceedToDrawerPreview() {
+      if (!pendingLargeItem) return;
+      const itemToOpen = pendingLargeItem;
+      closeLargeFileModal();
+      openPDFPreviewDrawerDirect(itemToOpen);
+    }
 
     function previewItemPDF(itemId, fileName) {
       const item = CATALOG.find(x => (x.id && x.id === itemId) || x.n === fileName);
@@ -2388,25 +2492,24 @@
       }
 
       const fileSize = parseFloat(item.s) || 0;
-      if (fileSize >= 30) {
-        const confirmMsg = `[대용량 파일 안내]
-
-'${item.n}'
-(파일 크기: ${item.s} MB)
-
-용량이 커서 로딩이 오래 걸릴 수 있는 파일입니다.
-그래도 미리보기를 보시겠습니까?`;
-        if (!confirm(confirmMsg)) {
-          return;
-        }
+      // 25MB 이상 대용량 파일: 구글 임베드 제한 안내 모달 표시
+      if (fileSize >= 25) {
+        openLargeFileModal(item);
+        return;
       }
 
+      openPDFPreviewDrawerDirect(item);
+    }
+
+    function openPDFPreviewDrawerDirect(item) {
       currentPreviewItem = item;
       const drawer = document.getElementById('pdf-preview-drawer');
       const mainPane = document.getElementById('catalog-main-pane');
       const mainArea = document.getElementById('main-content-area');
       const frame = document.getElementById('pdf-preview-frame');
       const loader = document.getElementById('pdf-preview-loading');
+      const largeNotice = document.getElementById('drawer-large-file-notice');
+      const fileSize = parseFloat(item.s) || 0;
 
       // Update drawer UI texts & badges
       const titleEl = document.getElementById('preview-file-title');
@@ -2429,6 +2532,11 @@
       if (bGubun) bGubun.textContent = item.g || '문제편';
 
       updatePreviewDrawerActionButtons();
+
+      if (largeNotice) {
+        if (fileSize >= 25) largeNotice.classList.remove('hidden');
+        else largeNotice.classList.add('hidden');
+      }
 
       // Show drawer
       if (drawer) {
@@ -2457,12 +2565,12 @@
         const loadingText = document.getElementById('pdf-preview-loading-text');
         const loadingSub = document.getElementById('pdf-preview-loading-subtext');
         if (loadingText) {
-          loadingText.textContent = (fileSize >= 30)
+          loadingText.textContent = (fileSize >= 25)
             ? `대용량 문서 (${item.s} MB)를 불러오는 중입니다...`
             : 'PDF 문서를 불러오는 중입니다...';
         }
         if (loadingSub) {
-          if (fileSize >= 30) loadingSub.classList.remove('hidden');
+          if (fileSize >= 25) loadingSub.classList.remove('hidden');
           else loadingSub.classList.add('hidden');
         }
         loader.classList.remove('opacity-0', 'pointer-events-none');

@@ -63,14 +63,27 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Mobile Safe Area & Horizontal Scroll Lock */
+    /* Mobile Safe Area & Horizontal Scroll Lock (clip avoids breaking position:sticky in WebKit/iPadOS) */
     html, body {
-      overflow-x: hidden;
+      overflow-x: clip;
       max-width: 100vw;
       width: 100%;
     }
     body {
       padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 24px));
+    }
+
+    /* Tablet Landscape & Desktop Rock-Solid Sticky Preview Drawer */
+    @media (min-width: 1024px) {
+      #pdf-preview-drawer {
+        position: -webkit-sticky !important;
+        position: sticky !important;
+        top: 5rem !important; /* 80px */
+        height: calc(100vh - 6.5rem) !important;
+        max-height: calc(100vh - 6.5rem) !important;
+        align-self: flex-start !important;
+        z-index: 30 !important;
+      }
     }
     .highlight { background-color: #141414; color: #ffffff; font-weight: 650; padding: 1px 4px; border-radius: 4px; }
     
@@ -594,7 +607,7 @@
       </div>
 
       <!-- Right Pane: Side PDF Preview Panel (Desktop Sticky Side View / Mobile Modal Drawer) -->
-      <aside id="pdf-preview-drawer" class="hidden fixed inset-0 z-50 bg-white lg:rounded-container lg:static lg:inset-auto lg:sticky lg:top-20 w-full lg:w-[48%] xl:w-[50%] h-full lg:h-[84vh] flex-col overflow-hidden transition-all duration-300 flex-shrink-0 shadow-2xl lg:shadow-none border-0 lg:border lg:border-hairline">
+      <aside id="pdf-preview-drawer" class="hidden fixed inset-0 z-50 bg-white lg:rounded-container lg:inset-auto lg:sticky lg:top-20 w-full lg:w-[48%] xl:w-[50%] h-full lg:h-[calc(100vh-6.5rem)] flex-col overflow-hidden transition-all duration-300 flex-shrink-0 shadow-2xl lg:shadow-none border-0 lg:border lg:border-hairline">
         
         <!-- Drawer Header -->
         <div class="p-3 sm:p-3.5 bg-canvas-soft border-b border-hairline flex flex-col gap-2">
@@ -638,9 +651,10 @@
 
         <!-- Iframe Container with Loading Skeleton -->
         <div class="relative flex-1 w-full h-full bg-[#323639] overflow-hidden">
-          <div id="pdf-preview-loading" class="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-2.5 z-10 transition-opacity duration-200">
+          <div id="pdf-preview-loading" class="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-2.5 p-4 text-center z-10 transition-opacity duration-200">
             <div class="w-7 h-7 border-2 border-ink/20 border-t-ink rounded-full animate-spin"></div>
-            <div class="text-xs font-semibold text-text-muted">PDF 문서를 불러오는 중입니다...</div>
+            <div id="pdf-preview-loading-text" class="text-xs font-semibold text-text-muted">PDF 문서를 불러오는 중입니다...</div>
+            <p id="pdf-preview-loading-subtext" class="text-[11px] text-text-faint hidden">로딩이 지연되거나 미리보기가 제한될 경우 상단 '새탭' 또는 '다운'을 이용해 주세요.</p>
           </div>
           <iframe id="pdf-preview-frame" src="about:blank" class="w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
@@ -2373,6 +2387,20 @@
         return;
       }
 
+      const fileSize = parseFloat(item.s) || 0;
+      if (fileSize >= 30) {
+        const confirmMsg = `[대용량 파일 안내]
+
+'${item.n}'
+(파일 크기: ${item.s} MB)
+
+용량이 커서 로딩이 오래 걸릴 수 있는 파일입니다.
+그래도 미리보기를 보시겠습니까?`;
+        if (!confirm(confirmMsg)) {
+          return;
+        }
+      }
+
       currentPreviewItem = item;
       const drawer = document.getElementById('pdf-preview-drawer');
       const mainPane = document.getElementById('catalog-main-pane');
@@ -2408,6 +2436,12 @@
         drawer.classList.add('flex');
         if (window.innerWidth < 1024) {
           document.body.classList.add('overflow-hidden');
+        } else {
+          // Tablet Landscape & Desktop: ensure drawer is comfortably visible
+          const drawerRect = drawer.getBoundingClientRect();
+          if (drawerRect.top < 0 || drawerRect.top > window.innerHeight) {
+            drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
         }
       }
       if (mainPane) {
@@ -2420,6 +2454,17 @@
 
       // Load Iframe with loader
       if (loader) {
+        const loadingText = document.getElementById('pdf-preview-loading-text');
+        const loadingSub = document.getElementById('pdf-preview-loading-subtext');
+        if (loadingText) {
+          loadingText.textContent = (fileSize >= 30)
+            ? `대용량 문서 (${item.s} MB)를 불러오는 중입니다...`
+            : 'PDF 문서를 불러오는 중입니다...';
+        }
+        if (loadingSub) {
+          if (fileSize >= 30) loadingSub.classList.remove('hidden');
+          else loadingSub.classList.add('hidden');
+        }
         loader.classList.remove('opacity-0', 'pointer-events-none');
         loader.classList.add('opacity-100');
       }

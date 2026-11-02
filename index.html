@@ -1175,10 +1175,14 @@
             <!-- Create Button -->
             <button onclick="createDefaultSubjectDatabases()" id="btn-create-notion-dbs" class="py-2.5 px-4 rounded-pill bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
               <span>🪄</span>
-              <span id="btn-create-notion-dbs-text">선택한 과목 표 노션에 자동 생성하기</span>
+              <span id="btn-create-notion-dbs-text">선택한 과목 표 노션에 자동 생성 및 4열 정렬하기</span>
+            </button>
+            <button onclick="triggerReorganizeLayout()" id="btn-reorganize-notion-dbs" class="py-2 px-3 rounded-pill bg-white border border-blue-300 hover:bg-blue-50 active:scale-95 text-blue-700 font-semibold text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-xs">
+              <span>📐</span>
+              <span id="btn-reorganize-notion-dbs-text">현재 노션 페이지 4열 레이아웃으로 자동 재정렬하기</span>
             </button>
             <p class="text-[10px] text-blue-900/70 text-center">
-              ※ 이미 노션 페이지에 존재하는 표는 자동으로 감지하여 건너뛰므로 중복 생성되지 않습니다.
+              ※ 각 가로줄마다 4개씩 표가 깔끔하게 정렬되며, 4개가 넘어가면 자동으로 아래 줄에 가로로 배치됩니다.
             </p>
           </div>
 
@@ -3467,7 +3471,7 @@
     // ==========================================
     // AUTO UPDATE DETECTION & REFRESH BANNER
     // ==========================================
-    const CURRENT_APP_VERSION = 1793619138;
+    const CURRENT_APP_VERSION = 1793620350;
     let updateBannerDismissed = false;
 
     function showUpdateBanner() {
@@ -4511,6 +4515,179 @@
       });
     }
 
+    async function autoOrganizeNotionDashboardLayout(targetId, token) {
+      try {
+        // 1. Fetch current page markdown
+        const mdRes = await fetch(`${NOTION_API_BASE}/pages/${targetId}/markdown`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Notion-Version': NOTION_VERSION
+          }
+        });
+        if (!mdRes.ok) return;
+        const mdData = await mdRes.json();
+        const rawMd = mdData.markdown || '';
+
+        // 2. Extract intro header text
+        const firstTagIdx = rawMd.search(/<(database|columns)/i);
+        let headerText = firstTagIdx !== -1 ? rawMd.slice(0, firstTagIdx).trim() : '과목별로 푼 문제는 **완료** 체크, 메모는 **비고**에 적기.';
+        if (!headerText) headerText = '과목별로 푼 문제는 **완료** 체크, 메모는 **비고**에 적기.';
+
+        // 3. Extract all source databases
+        const rootDbRegex = /<database\s+url="([^"]+)"[^>]*?data-source-url="(collection:\/\/[^"]+)"[^>]*>([^<]+)<\/database>/g;
+        const databases = [];
+        const seen = new Set();
+        let match;
+        while ((match = rootDbRegex.exec(rawMd)) !== null) {
+          const url = match[1];
+          const ds = match[2];
+          const title = match[3].trim();
+          if (!seen.has(ds)) {
+            seen.add(ds);
+            databases.push({ url, dataSourceUrl: ds, title });
+          }
+        }
+
+        // Also extract from any column callouts + linked databases
+        const colRegex = /<callout[^>]*icon="([^"]*)"[^>]*color="([^"]*)"[^>]*>\s*([\s\S]*?)\s*<\/callout>\s*<database[^>]*?data-source-url="(collection:\/\/[^"]+)"[^>]*>/gi;
+        while ((match = colRegex.exec(rawMd)) !== null) {
+          const icon = match[1];
+          const color = match[2];
+          const cleanTitle = match[3].replace(/[*_#]/g, '').trim();
+          const ds = match[4];
+          const existing = databases.find(d => d.dataSourceUrl === ds);
+          if (existing) {
+            existing.icon = icon;
+            existing.color = color;
+            if (!existing.title || existing.title === 'Untitled') existing.title = cleanTitle;
+          } else {
+            seen.add(ds);
+            databases.push({ url: '', dataSourceUrl: ds, title: cleanTitle, icon, color });
+          }
+        }
+
+        if (databases.length === 0) return;
+
+        function getSubjectStyle(title) {
+          const t = title.toLowerCase();
+          if (t.includes('문학')) return { icon: '📖', color: 'red_bg', pre: '국어', suf: '문학기출' };
+          if (t.includes('국어')) return { icon: '📝', color: 'orange_bg', pre: '국어', suf: '모의고사' };
+          if (t.includes('수학')) return { icon: '📐', color: 'blue_bg', pre: '수학', suf: '모의고사' };
+          if (t.includes('사회문화') || t.includes('사문')) return { icon: '🏛️', color: 'green_bg', pre: '사회문화', suf: '모의고사' };
+          if (t.includes('생활과윤리') || t.includes('생윤')) return { icon: '⚖️', color: 'pink_bg', pre: '생활과윤리', suf: '모의고사' };
+          if (t.includes('윤리와사상') || t.includes('윤사')) return { icon: '📜', color: 'pink_bg', pre: '윤리와사상', suf: '모의고사' };
+          if (t.includes('정치와법') || t.includes('정법')) return { icon: '⚖️', color: 'gray_bg', pre: '정치와법', suf: '모의고사' };
+          if (t.includes('한국지리') || t.includes('한지')) return { icon: '🗺️', color: 'green_bg', pre: '한국지리', suf: '모의고사' };
+          if (t.includes('세계지리') || t.includes('세지')) return { icon: '🌍', color: 'green_bg', pre: '세계지리', suf: '모의고사' };
+          if (t.includes('영어')) return { icon: '🔤', color: 'purple_bg', pre: '영어', suf: '모의고사' };
+          if (t.includes('한국사')) return { icon: '🇰🇷', color: 'yellow_bg', pre: '한국사', suf: '모의고사' };
+          if (t.includes('물리')) return { icon: '⚡', color: 'blue_bg', pre: '물리학', suf: '모의고사' };
+          if (t.includes('화학')) return { icon: '🧪', color: 'purple_bg', pre: '화학', suf: '모의고사' };
+          if (t.includes('생명')) return { icon: '🧬', color: 'green_bg', pre: '생명과학', suf: '모의고사' };
+          if (t.includes('지구과학') || t.includes('지학')) return { icon: '🌍', color: 'blue_bg', pre: '지구과학', suf: '모의고사' };
+          const parts = title.split(' ');
+          const pre = parts[0] || title;
+          const suf = parts.slice(1).join(' ') || '모의고사';
+          return { icon: '📚', color: 'blue_bg', pre, suf };
+        }
+
+        function sortPriority(item) {
+          const t = item.title.toLowerCase();
+          if (t.includes('국어') && t.includes('문학')) return 1;
+          if (t.includes('국어')) return 2;
+          if (t.includes('수학')) return 3;
+          if (['사회문화', '사문', '생윤', '윤사', '정법', '한지', '세지'].some(k => t.includes(k))) return 4;
+          if (t.includes('영어')) return 5;
+          if (t.includes('한국사')) return 6;
+          if (['물리', '화학', '생명', '지구과학', '지학'].some(k => t.includes(k))) return 7;
+          return 8;
+        }
+
+        databases.sort((a, b) => sortPriority(a) - sortPriority(b));
+
+        let newMd = headerText + '\n';
+        for (const d of databases) {
+          if (d.url) {
+            newMd += `<database url="${d.url}" inline="false" data-source-url="${d.dataSourceUrl}">${d.title}</database>\n`;
+          }
+        }
+
+        const CHUNK_SIZE = 4;
+        for (let i = 0; i < databases.length; i += CHUNK_SIZE) {
+          const chunk = databases.slice(i, i + CHUNK_SIZE);
+          newMd += '<columns>\n';
+          for (const d of chunk) {
+            const style = getSubjectStyle(d.title);
+            const icon = d.icon || style.icon;
+            const color = d.color || style.color;
+            const pre = style.pre;
+            const suf = style.suf;
+
+            newMd += `\t<column ratio="25">\n`;
+            newMd += `\t\t<callout icon="${icon}" color="${color}">\n`;
+            newMd += `\t\t\t**${pre}** ${suf}\n`;
+            newMd += `\t\t</callout>\n`;
+            newMd += `\t\t<database inline="true" data-source-url="${d.dataSourceUrl}"></database>\n`;
+            newMd += `\t</column>\n`;
+          }
+          for (let j = chunk.length; j < CHUNK_SIZE; j++) {
+            newMd += `\t<column ratio="25">\n\t\t<empty-block/>\n\t</column>\n`;
+          }
+          newMd += '</columns>\n';
+        }
+
+        // Send PATCH
+        await fetch(`${NOTION_API_BASE}/pages/${targetId}/markdown`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Notion-Version': NOTION_VERSION,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: 'replace_content',
+            replace_content: {
+              new_str: newMd.trim(),
+              allow_deleting_content: true
+            }
+          })
+        });
+      } catch (e) {
+        console.warn('autoOrganizeNotionDashboardLayout error:', e);
+      }
+    }
+
+    async function triggerReorganizeLayout() {
+      const config = getNotionConfig() || {};
+      const tokenInput = document.getElementById('notion-token-input');
+      const targetInput = document.getElementById('notion-target-input');
+      const token = (tokenInput ? tokenInput.value : config.token || '').trim();
+      const rawTarget = (targetInput ? targetInput.value : config.target || '').trim();
+      const targetId = extractNotionId(rawTarget) || config.targetId;
+
+      if (!token || !targetId) {
+        alert("먼저 노션 통합 토큰과 대시보드 페이지 링크를 입력해 주세요.");
+        return;
+      }
+
+      const btn = document.getElementById('btn-reorganize-notion-dbs');
+      const btnText = document.getElementById('btn-reorganize-notion-dbs-text');
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.textContent = "노션 대시보드 4열 레이아웃 정렬 중...";
+
+      try {
+        await autoOrganizeNotionDashboardLayout(targetId, token);
+        showToast("✨ 노션 대시보드가 가로 4열 레이아웃으로 완벽하게 정렬되었습니다!");
+        alert("✨ 노션 대시보드가 가로줄마다 4표씩 깔끔하게 정렬되었습니다! 노션 페이지를 확인해 보세요.");
+      } catch (err) {
+        console.error("Layout reorganize error:", err);
+        alert(`레이아웃 정렬 실패: ${err.message || err}`);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = "현재 노션 페이지 4열 레이아웃으로 자동 재정렬하기";
+      }
+    }
+
     async function createDefaultSubjectDatabases() {
       const config = getNotionConfig() || {};
       const tokenInput = document.getElementById('notion-token-input');
@@ -4594,11 +4771,11 @@
             continue;
           }
 
-          // Create database (inline table)
+          // Create database (page database, is_inline: false)
           const dbPayload = {
             parent: { type: 'page_id', page_id: targetId },
             title: [{ type: 'text', text: { content: subj } }],
-            is_inline: true,
+            is_inline: false,
             properties: {
               '항목': { title: {} },
               '완료': { checkbox: {} },
@@ -4624,6 +4801,10 @@
             createdNames.push(subj);
           }
         }
+
+        // 2-1. Automatically format target Notion page layout into 4 columns per row
+        if (btnText) btnText.textContent = "노션 대시보드 4열 레이아웃 자동 정렬 중...";
+        await autoOrganizeNotionDashboardLayout(targetId, token);
 
         // 3. Refresh databases list
         const refreshRes = await fetch(`${NOTION_API_BASE}/search`, {

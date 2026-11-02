@@ -1904,13 +1904,14 @@
 
     function getStudyData() {
       const key = getStudyDataKey();
-      let data = { bookmarks: {}, solved: {} };
+      let data = { bookmarks: {}, solved: {}, notionItems: {} };
       try {
         const raw = localStorage.getItem(key);
         if (raw) {
           data = JSON.parse(raw);
           if (!data.bookmarks) data.bookmarks = {};
           if (!data.solved) data.solved = {};
+          if (!data.notionItems) data.notionItems = {};
         }
       } catch(e) {}
 
@@ -2010,6 +2011,22 @@
       return (item.id && bookmarks[item.id]) ||
              (item.n && bookmarks[item.n]) ||
              (item.p && bookmarks[item.p]) || null;
+    }
+
+    function isItemInNotion(notionItems, item) {
+      if (!notionItems || !item) return false;
+      return Boolean(
+        (item.id && notionItems[item.id]) ||
+        (item.n && notionItems[item.n]) ||
+        (item.p && notionItems[item.p])
+      );
+    }
+
+    function getItemNotionInfo(notionItems, item) {
+      if (!notionItems || !item) return null;
+      return (item.id && notionItems[item.id]) ||
+             (item.n && notionItems[item.n]) ||
+             (item.p && notionItems[item.p]) || null;
     }
 
     function updateBookmarkBadges() {
@@ -2752,6 +2769,8 @@
         const bookmarkInfo = getItemBookmarkInfo(studyData.bookmarks, item);
         const isBookmarked = Boolean(bookmarkInfo);
         const memoText = bookmarkInfo ? (bookmarkInfo.memo || '') : '';
+        const notionInfo = getItemNotionInfo(studyData.notionItems, item);
+        const isInNotion = Boolean(notionInfo);
         const driveViewUrl = item.id ? `https://drive.google.com/file/d/${item.id}/view?usp=sharing` : '';
         const driveDownloadUrl = item.id ? `https://drive.usercontent.google.com/download?id=${item.id}&export=download&confirm=t` : '';
         const isRecent = (item.mt && (Math.floor(Date.now() / 1000) - item.mt) < (7 * 86400));
@@ -2771,6 +2790,7 @@
                 ${isRecent ? `<span class="px-1.5 py-0.5 rounded-pill bg-[#b91c1c] text-white text-[8px] sm:text-[9px] font-black uppercase tracking-wider">NEW</span>` : ''}
                 
                 ${isSolved ? `<span class="px-2 py-0.5 rounded-pill bg-emerald-100 border border-emerald-300 text-emerald-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1">✓ 완료</span>` : ''}
+                ${isInNotion ? `<span class="px-2 py-0.5 rounded-pill bg-[#191919] text-white text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shadow-2xs" title="${notionInfo.dbTitle ? '[' + notionInfo.dbTitle + '] 표에 연동됨 (다시 누르면 삭제)' : '노션에 추가됨'}">📓 노션 추가됨</span>` : ''}
                 ${isBookmarked ? `<span class="px-2 py-0.5 rounded-pill bg-amber-100 border border-amber-300 text-amber-900 text-[9px] sm:text-[10px] font-bold flex items-center gap-1">⭐ 찜</span>` : ''}
 
                 <span class="px-2 py-0.5 rounded-pill bg-canvas-soft border border-hairline text-ink text-[10px] sm:text-[11px] font-semibold">
@@ -2864,8 +2884,8 @@
                     </button>
                   ` : ''}
 
-                  <button onclick="addSingleItemToNotion('${item.id}', '${escapedName}')" class="w-7 h-7 sm:w-8 sm:h-8 rounded-pill bg-canvas-soft hover:bg-neutral-200 active:scale-90 text-text-muted hover:text-ink flex items-center justify-center text-xs transition-all" title="내 노션에 이 자료 추가">
-                    📓
+                  <button onclick="toggleSingleItemNotion('${item.id}', '${escapedName}')" class="w-7 h-7 sm:w-8 sm:h-8 rounded-pill ${isInNotion ? 'bg-[#191919] hover:bg-black text-white font-bold ring-2 ring-neutral-400 shadow-2xs' : 'bg-canvas-soft hover:bg-neutral-200 text-text-muted hover:text-ink'} active:scale-90 flex items-center justify-center text-xs transition-all" title="${isInNotion ? (notionInfo.dbTitle ? '[' + notionInfo.dbTitle + '] 표에 연동됨 (클릭 시 노션에서 삭제)' : '노션 표에 연동됨 (클릭 시 노션에서 삭제)') : '내 노션에 이 자료 추가'}">
+                    ${isInNotion ? '<span class="text-[11px] font-black">📓✓</span>' : '📓'}
                   </button>
                   <button onclick="openItemFile('${item.id}', '${escapedName}')" class="w-7 h-7 sm:w-8 sm:h-8 rounded-pill bg-canvas-soft hover:bg-[#e4e4e4] active:scale-90 text-text-muted hover:text-ink flex items-center justify-center text-xs transition-all" title="구글 드라이브 새창 열기">
                     ↗
@@ -3149,6 +3169,20 @@
         } else {
           btnBookmark.className = 'px-3 py-1 rounded-pill bg-white hover:bg-canvas-soft text-ink border border-hairline font-semibold text-xs flex items-center gap-1 transition-colors';
           btnBookmark.innerHTML = '<span>☆ 찜</span>';
+        }
+      }
+
+      const btnNotion = document.getElementById('btn-preview-notion');
+      if (btnNotion) {
+        const notionInfo = getItemNotionInfo(studyData.notionItems, currentPreviewItem);
+        if (notionInfo) {
+          btnNotion.className = 'px-3 py-1 rounded-pill bg-[#191919] hover:bg-black text-white font-bold text-xs flex items-center gap-1 transition-colors shadow-2xs ring-1 ring-neutral-400';
+          btnNotion.innerHTML = '<span>📓✓ 노션 추가됨</span>';
+          btnNotion.title = (notionInfo.dbTitle ? '[' + notionInfo.dbTitle + '] 표에 연동됨' : '노션 표에 연동됨') + ' (클릭 시 노션에서 삭제)';
+        } else {
+          btnNotion.className = 'px-2.5 py-1 rounded-pill bg-white hover:bg-neutral-100 border border-hairline text-ink font-bold text-xs flex items-center gap-1 transition-colors';
+          btnNotion.innerHTML = '<span>📓 노션</span>';
+          btnNotion.title = '내 노션에 이 자료 추가';
         }
       }
     }
@@ -3471,7 +3505,7 @@
     // ==========================================
     // AUTO UPDATE DETECTION & REFRESH BANNER
     // ==========================================
-    const CURRENT_APP_VERSION = 1793621828;
+    const CURRENT_APP_VERSION = 1793622535;
     let updateBannerDismissed = false;
 
     function showUpdateBanner() {
@@ -5206,10 +5240,83 @@
       return await res.json();
     }
 
-    async function addSingleItemToNotion(itemId, fileName) {
+    async function syncExistingNotionItems(force = false) {
+      const config = getNotionConfig();
+      if (!config || !config.token) return;
+
+      const now = Date.now();
+      if (!force && config.lastNotionSync && (now - config.lastNotionSync < 120000)) {
+        return; // sync at most once every 2 minutes
+      }
+
+      try {
+        const dbs = await getOrFetchDatabases(config);
+        if (!dbs || dbs.length === 0) return;
+
+        const studyData = getStudyData();
+        studyData.notionItems = studyData.notionItems || {};
+
+        const promises = dbs.map(async (db) => {
+          try {
+            const qRes = await fetch(`${NOTION_API_BASE}/databases/${db.id}/query`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${config.token}`,
+                'Notion-Version': NOTION_VERSION,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ page_size: 100 })
+            });
+            if (!qRes.ok) return [];
+            const qData = await qRes.json();
+            return (qData.results || []).map(r => {
+              const t = ((r.properties && r.properties['항목'] && r.properties['항목'].title) || []).map(x => x.plain_text).join('').trim();
+              return { pageId: r.id, dbId: db.id, dbTitle: db.title, title: t };
+            });
+          } catch (e) {
+            return [];
+          }
+        });
+
+        const results = await Promise.all(promises);
+        const allRows = results.flat();
+
+        for (const row of allRows) {
+          if (!row.title) continue;
+          // Clean compare
+          const cleanRowTitle = row.title.replace(/\s+/g, ' ').trim().toLowerCase();
+          const matchedItem = CATALOG.find(it => {
+            const cleanIt = formatCleanNotionTitle(it.n).replace(/\s+/g, ' ').trim().toLowerCase();
+            const rawIt = it.n.replace(/\.[^/.]+$/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+            return cleanIt === cleanRowTitle || rawIt === cleanRowTitle || cleanRowTitle.includes(cleanIt) || cleanIt.includes(cleanRowTitle);
+          });
+
+          if (matchedItem) {
+            if (matchedItem.id) studyData.notionItems[matchedItem.id] = row;
+            if (matchedItem.n) studyData.notionItems[matchedItem.n] = row;
+            if (matchedItem.p) studyData.notionItems[matchedItem.p] = row;
+          } else {
+            studyData.notionItems[row.title] = row;
+          }
+        }
+
+        config.lastNotionSync = now;
+        saveNotionConfig(config);
+        saveStudyData(studyData);
+        render();
+        if (typeof updatePreviewDrawerActionButtons === 'function') {
+          updatePreviewDrawerActionButtons();
+        }
+      } catch (err) {
+        console.warn("syncExistingNotionItems error:", err);
+      }
+    }
+
+    async function toggleSingleItemNotion(itemId, fileName) {
       const config = getNotionConfig();
       if (!config || !config.token) {
-        const proceed = confirm("노션 연동 설정이 아직 완료되지 않았습니다.\n계정 설정에서 노션 토큰을 먼저 등록하시겠습니까?");
+        const proceed = confirm("노션 연동 설정이 아직 완료되지 않았습니다.
+계정 설정에서 노션 토큰을 먼저 등록하시겠습니까?");
         if (proceed) {
           openAccountSettingsModal();
         }
@@ -5225,6 +5332,86 @@
       };
 
       const cleanTitle = formatCleanNotionTitle(item.n);
+      const studyData = getStudyData();
+      studyData.notionItems = studyData.notionItems || {};
+      const notionInfo = getItemNotionInfo(studyData.notionItems, item);
+
+      // 1. If ALREADY in Notion -> REMOVE (Archive)
+      if (notionInfo) {
+        showToast(`🗑️ 노션에서 '${cleanTitle}' 삭제 중...`);
+        try {
+          let pageId = notionInfo.pageId;
+          if (pageId) {
+            const delRes = await fetch(`${NOTION_API_BASE}/pages/${pageId}`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${config.token}`,
+                'Notion-Version': NOTION_VERSION,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ archived: true })
+            });
+            if (!delRes.ok && delRes.status !== 404) {
+              console.warn("Direct page archive failed:", delRes.status);
+            }
+          } else {
+            // Query DB by title to delete
+            const dbs = await getOrFetchDatabases(config);
+            const targetDb = findMatchingNotionDatabase(item, dbs);
+            if (targetDb) {
+              const qRes = await fetch(`${NOTION_API_BASE}/databases/${targetDb.id}/query`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${config.token}`,
+                  'Notion-Version': NOTION_VERSION,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  filter: {
+                    property: '항목',
+                    title: { equals: cleanTitle }
+                  }
+                })
+              });
+              if (qRes.ok) {
+                const qData = await qRes.json();
+                for (const p of (qData.results || [])) {
+                  await fetch(`${NOTION_API_BASE}/pages/${p.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Authorization': `Bearer ${config.token}`,
+                      'Notion-Version': NOTION_VERSION,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ archived: true })
+                  });
+                }
+              }
+            }
+          }
+
+          // Remove from local studyData
+          if (item.id) delete studyData.notionItems[item.id];
+          if (item.n) delete studyData.notionItems[item.n];
+          if (item.p) delete studyData.notionItems[item.p];
+          if (notionInfo.title) delete studyData.notionItems[notionInfo.title];
+          saveStudyData(studyData);
+
+          render();
+          if (typeof updatePreviewDrawerActionButtons === 'function') {
+            updatePreviewDrawerActionButtons();
+          }
+          showToast(`✅ [${notionInfo.dbTitle || '노션 표'}]에서 '${cleanTitle}' 삭제 완료!`);
+        } catch (err) {
+          console.error("Notion delete error:", err);
+          alert(`[노션 삭제 실패]
+
+${err.message || err}`);
+        }
+        return;
+      }
+
+      // 2. If NOT in Notion -> ADD (Prevent duplicate)
       showToast(`📓 노션에 '${cleanTitle}' 추가 중...`);
 
       try {
@@ -5241,41 +5428,79 @@
           targetDb = findMatchingNotionDatabase(item, dbs);
         }
 
-        if (targetDb) {
-          await insertRowToNotionDatabase(item, targetDb, config.token, '');
-          showToast(`🎉 [${targetDb.title}]에 '${cleanTitle}' 추가 완료!`);
-        } else if (config.targetId) {
-          const link = item.id ? `https://drive.google.com/file/d/${item.id}/view?usp=sharing` : null;
-          const res = await fetch(`${NOTION_API_BASE}/blocks/${config.targetId}/children`, {
-            method: 'PATCH',
+        if (!targetDb) {
+          throw new Error("연결 가능한 노션 데이터베이스(과목별 표)를 찾을 수 없습니다.");
+        }
+
+        // Deduplication Check in DB
+        const titleKey = Object.keys(targetDb.properties || {}).find(k => targetDb.properties[k].type === 'title') || '항목';
+        let existingPageId = null;
+        try {
+          const checkRes = await fetch(`${NOTION_API_BASE}/databases/${targetDb.id}/query`, {
+            method: 'POST',
             headers: {
               'Authorization': `Bearer ${config.token}`,
               'Notion-Version': NOTION_VERSION,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              children: [{
-                object: 'block',
-                type: 'to_do',
-                to_do: {
-                  rich_text: [{
-                    type: 'text',
-                    text: { content: cleanTitle, ...(link ? { link: { url: link } } : {}) }
-                  }],
-                  checked: false
-                }
-              }]
+              filter: {
+                property: titleKey,
+                title: { equals: cleanTitle }
+              }
             })
           });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          showToast(`🎉 노션 페이지에 '${cleanTitle}' 추가 완료!`);
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            if (checkData.results && checkData.results.length > 0) {
+              existingPageId = checkData.results[0].id;
+            }
+          }
+        } catch (e) {}
+
+        let pageResult = null;
+        if (existingPageId) {
+          pageResult = { id: existingPageId };
         } else {
-          throw new Error("연결 가능한 노션 데이터베이스나 페이지를 찾을 수 없습니다.");
+          pageResult = await insertRowToNotionDatabase(item, targetDb, config.token, '');
+        }
+
+        const key = item.id || item.n;
+        const pageId = (pageResult && pageResult.id) ? pageResult.id : (existingPageId || '');
+        const entry = {
+          pageId,
+          dbId: targetDb.id,
+          dbTitle: targetDb.title,
+          title: cleanTitle,
+          addedAt: new Date().toISOString()
+        };
+
+        if (item.id) studyData.notionItems[item.id] = entry;
+        if (item.n) studyData.notionItems[item.n] = entry;
+        if (item.p) studyData.notionItems[item.p] = entry;
+        studyData.notionItems[cleanTitle] = entry;
+        saveStudyData(studyData);
+
+        render();
+        if (typeof updatePreviewDrawerActionButtons === 'function') {
+          updatePreviewDrawerActionButtons();
+        }
+
+        if (existingPageId) {
+          showToast(`ℹ️ [${targetDb.title}] 표에 이미 추가된 자료입니다. (연동 표시 활성화)`);
+        } else {
+          showToast(`🎉 [${targetDb.title}]에 '${cleanTitle}' 추가 완료! (다시 누르면 삭제)`);
         }
       } catch (err) {
         console.error("Single Notion add error:", err);
-        alert(`[노션 추가 실패]\n\n${err.message || err}`);
+        alert(`[노션 추가 실패]
+
+${err.message || err}`);
       }
+    }
+
+    function addSingleItemToNotion(itemId, fileName) {
+      return toggleSingleItemNotion(itemId, fileName);
     }
 
     function addCurrentPreviewToNotion() {
@@ -5283,7 +5508,11 @@
         showToast("⚠️ 현재 미리보기 중인 자료가 없습니다.");
         return;
       }
-      addSingleItemToNotion(currentPreviewItem.id, currentPreviewItem.n);
+      toggleSingleItemNotion(currentPreviewItem.id, currentPreviewItem.n);
+    }
+
+    function toggleCurrentPreviewNotion() {
+      addCurrentPreviewToNotion();
     }
 
     async function exportBookmarksToNotion() {
@@ -5291,20 +5520,25 @@
       const items = CATALOG.filter(it => isItemBookmarked(data.bookmarks, it));
 
       if (items.length === 0) {
-        alert("출력할 거 리스트에 담긴 자료가 없습니다.\n먼저 자료 카드의 '☆ 찜' 버튼을 눌러 추가해 주세요.");
+        alert("출력할 거 리스트에 담긴 자료가 없습니다.
+먼저 자료 카드의 '☆ 찜' 버튼을 눌러 추가해 주세요.");
         return;
       }
 
       const config = getNotionConfig();
       if (!config || !config.token) {
-        const proceed = confirm("노션 연동 설정이 아직 완료되지 않았습니다.\n계정 설정에서 노션 페이지 링크와 토큰을 먼저 등록하시겠습니까?");
+        const proceed = confirm("노션 연동 설정이 아직 완료되지 않았습니다.
+계정 설정에서 노션 페이지 링크와 토큰을 먼저 등록하시겠습니까?");
         if (proceed) {
           openAccountSettingsModal();
         }
         return;
       }
 
-      const confirmMsg = `출력할 거 리스트의 총 ${items.length}개 수능 자료를 내 노션 과목별 데이터베이스에 추가하시겠습니까?\n\n- 대상 워크스페이스: ${config.workspaceName || '내 노션'}\n- 추가할 자료 수: ${items.length}개`;
+      const confirmMsg = `출력할 거 리스트의 총 ${items.length}개 수능 자료를 내 노션 과목별 데이터베이스에 추가하시겠습니까?
+
+- 대상 워크스페이스: ${config.workspaceName || '내 노션'}
+- 추가할 자료 수: ${items.length}개`;
       if (!confirm(confirmMsg)) return;
 
       showToast(`📓 노션으로 ${items.length}개 자료를 전송하는 중...`);
@@ -5312,22 +5546,101 @@
       try {
         const token = config.token;
         let dbs = await getOrFetchDatabases(config);
+        if (config.targetType !== 'database' && dbs.length < 4) {
+          dbs = await getOrFetchDatabases(config, true);
+        }
 
         if (dbs.length > 0) {
+          data.notionItems = data.notionItems || {};
           let addedCount = 0;
+          let skippedCount = 0;
+
           for (const it of items) {
+            const cleanTitle = formatCleanNotionTitle(it.n);
             const bm = getItemBookmarkInfo(data.bookmarks, it) || {};
             const targetDb = (config.targetType === 'database' && config.targetId) 
               ? (dbs.find(d => d.id.replace(/-/g, '') === config.targetId.replace(/-/g, '')) || dbs[0])
               : findMatchingNotionDatabase(it, dbs);
 
             if (targetDb) {
-              await insertRowToNotionDatabase(it, targetDb, token, bm.memo || '');
+              // Deduplication pre-check
+              const alreadyMarked = getItemNotionInfo(data.notionItems, it);
+              if (alreadyMarked) {
+                skippedCount++;
+                continue;
+              }
+
+              const titleKey = Object.keys(targetDb.properties || {}).find(k => targetDb.properties[k].type === 'title') || '항목';
+              let isDup = false;
+              let existingPageId = null;
+
+              try {
+                const checkRes = await fetch(`${NOTION_API_BASE}/databases/${targetDb.id}/query`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Notion-Version': NOTION_VERSION,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    filter: { property: titleKey, title: { equals: cleanTitle } }
+                  })
+                });
+                if (checkRes.ok) {
+                  const checkData = await checkRes.json();
+                  if (checkData.results && checkData.results.length > 0) {
+                    isDup = true;
+                    existingPageId = checkData.results[0].id;
+                  }
+                }
+              } catch (e) {}
+
+              if (isDup) {
+                const entry = {
+                  pageId: existingPageId,
+                  dbId: targetDb.id,
+                  dbTitle: targetDb.title,
+                  title: cleanTitle,
+                  addedAt: new Date().toISOString()
+                };
+                if (it.id) data.notionItems[it.id] = entry;
+                if (it.n) data.notionItems[it.n] = entry;
+                if (it.p) data.notionItems[it.p] = entry;
+                skippedCount++;
+                continue;
+              }
+
+              const rowRes = await insertRowToNotionDatabase(it, targetDb, token, bm.memo || '');
+              const pageId = (rowRes && rowRes.id) ? rowRes.id : '';
+              const entry = {
+                pageId,
+                dbId: targetDb.id,
+                dbTitle: targetDb.title,
+                title: cleanTitle,
+                addedAt: new Date().toISOString()
+              };
+              if (it.id) data.notionItems[it.id] = entry;
+              if (it.n) data.notionItems[it.n] = entry;
+              if (it.p) data.notionItems[it.p] = entry;
               addedCount++;
             }
           }
-          showToast(`🎉 노션 데이터베이스에 ${addedCount}개 자료 표 추가 완료!`);
+
+          saveStudyData(data);
+          render();
+          if (typeof updatePreviewDrawerActionButtons === 'function') {
+            updatePreviewDrawerActionButtons();
+          }
+
+          if (skippedCount > 0 && addedCount === 0) {
+            showToast(`ℹ️ 선택한 ${skippedCount}개 자료가 이미 노션 표에 모두 추가되어 있습니다. (중복 방지)`);
+          } else if (skippedCount > 0) {
+            showToast(`🎉 노션 표에 ${addedCount}개 추가 완료! (${skippedCount}개 중복 건너뜀)`);
+          } else {
+            showToast(`🎉 노션 표에 ${addedCount}개 자료 추가 완료!`);
+          }
         } else if (config.targetId) {
+          // Page fallback
           const chunks = [];
           for (let i = 0; i < items.length; i += 80) {
             chunks.push(items.slice(i, i + 80));
@@ -5383,7 +5696,11 @@
 
       } catch (err) {
         console.error("Notion export error:", err);
-        alert(`[노션 추가 실패]\n\n${err.message || err}\n\n💡 노션 페이지 우측 상단 '···' -> '연결(Connect to)'에서 통합 봇이 허용되어 있는지 확인해 주세요.`);
+        alert(`[노션 추가 실패]
+
+${err.message || err}
+
+💡 노션 페이지 우측 상단 '···' -> '연결(Connect to)'에서 통합 봇이 허용되어 있는지 확인해 주세요.`);
       }
     }
 
@@ -6615,6 +6932,9 @@
     updateBadgeCount();
     setupMobileKeyboardDismissal();
     initKakaoAndInstallState();
+    setTimeout(() => {
+      syncExistingNotionItems();
+    }, 1500);
   </script>
 </body>
 </html>

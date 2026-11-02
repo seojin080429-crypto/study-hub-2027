@@ -645,6 +645,9 @@
           <div class="flex items-center justify-between gap-2.5 pt-0.5">
             <h4 id="preview-file-title" class="font-bold text-xs sm:text-sm text-ink truncate leading-tight flex-1" title="">자료 파일명</h4>
             <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button id="btn-preview-notion" onclick="addCurrentPreviewToNotion()" class="px-2.5 py-1 rounded-pill bg-white hover:bg-neutral-100 border border-hairline text-ink font-bold text-xs flex items-center gap-1 transition-colors" title="내 노션에 이 자료 추가">
+                <span>📓 노션</span>
+              </button>
               <button id="btn-preview-bookmark" onclick="togglePreviewBookmark()" class="px-2.5 py-1 rounded-pill bg-white border border-hairline text-ink font-bold text-xs flex items-center gap-1 transition-colors">
                 <span>☆ 찜</span>
               </button>
@@ -1020,9 +1023,9 @@
                 <label class="font-bold text-ink">1. 노션 통합 토큰 (API Key)</label>
                 <span class="text-[10px] text-text-faint">Internal Integration Secret</span>
               </div>
-              <input type="password" id="notion-token-input" placeholder="ntn_... 또는 secret_..." class="w-full bg-field border border-hairline rounded-tile px-3.5 py-2.5 text-xs text-ink font-mono outline-none focus:ring-2 focus:ring-ink focus:bg-white transition-all" />
+              <input type="password" id="notion-token-input" placeholder="ntn_... 또는 secret_... 토큰 입력" class="w-full bg-field border border-hairline rounded-tile px-3.5 py-2.5 text-xs text-ink font-mono outline-none focus:ring-2 focus:ring-ink focus:bg-white transition-all" />
               <p class="text-[10px] text-text-muted mt-1 leading-normal">
-                기본 통합 봇(yubin) 토큰이 자동 적용되어 있으며, 필요 시 본인 전용 노션 토큰으로 변경할 수 있습니다.
+                <a href="https://www.notion.so/my-integrations" target="_blank" class="underline text-ink font-semibold">노션 내 통합(notion.so/my-integrations)</a>에서 발급받은 본인의 프라이빗 API 토큰을 입력해 주세요.
               </p>
             </div>
 
@@ -1059,9 +1062,9 @@
                 <span class="text-[11px] text-text-muted">자세히 보기 ▾</span>
               </summary>
               <div class="pt-3 text-[11px] text-text-muted leading-relaxed flex flex-col gap-1.5 border-t border-hairline-soft mt-2.5">
-                <p>1. 내 노션에서 추가하고 싶은 페이지(예: <strong>과목별 체크리스트</strong>)를 엽니다.</p>
-                <p>2. 페이지 우측 상단 <strong>··· (더보기)</strong> 버튼 클릭 → <strong>연결 (Connect to)</strong> 선택</p>
-                <p>3. 목록에서 <strong>yubin</strong> (또는 본인 생성 봇)을 검색하여 추가(권한 허용)</p>
+                <p>1. <a href="https://www.notion.so/my-integrations" target="_blank" class="underline font-bold text-ink">노션 API 통합(Integration)</a>을 생성하고 발급받은 프라이빗 API 시크릿을 위 1번에 붙여넣습니다.</p>
+                <p>2. 내 노션에서 추가하고 싶은 페이지(예: <strong>과목별 체크리스트</strong>)를 엽니다.</p>
+                <p>3. 페이지 우측 상단 <strong>··· (더보기)</strong> 버튼 클릭 → <strong>연결 (Connect to)</strong>에서 생성한 통합 봇을 추가(페이지 권한 허용)</p>
                 <p>4. 브라우저 주소창의 링크를 복사하여 위 <strong>[페이지 링크]</strong>에 붙여넣고 <strong>[연결 테스트]</strong> 클릭!</p>
               </div>
             </details>
@@ -2635,6 +2638,9 @@
                     </button>
                   ` : ''}
 
+                  <button onclick="addSingleItemToNotion('${item.id}', '${escapedName}')" class="w-7 h-7 sm:w-8 sm:h-8 rounded-pill bg-canvas-soft hover:bg-neutral-200 active:scale-90 text-text-muted hover:text-ink flex items-center justify-center text-xs transition-all" title="내 노션에 이 자료 추가">
+                    📓
+                  </button>
                   <button onclick="openItemFile('${item.id}', '${escapedName}')" class="w-7 h-7 sm:w-8 sm:h-8 rounded-pill bg-canvas-soft hover:bg-[#e4e4e4] active:scale-90 text-text-muted hover:text-ink flex items-center justify-center text-xs transition-all" title="구글 드라이브 새창 열기">
                     ↗
                   </button>
@@ -3856,7 +3862,6 @@
     // ==========================================
     // ACCOUNT SETTINGS & NOTION INTEGRATION
     // ==========================================
-    const DEFAULT_NOTION_TOKEN = atob('bnRuXzEwMDkxMjk3ODIzN1FXd2ZlN04yQUJ1VVR0amtRTHhodlAzM1RVN1ZmTUY3Ym4=');
     const NOTION_API_BASE = 'https://api.notion.com/v1';
     const NOTION_VERSION = '2022-06-28';
 
@@ -3885,7 +3890,7 @@
         if (raw) return JSON.parse(raw);
       } catch(e) {}
       return {
-        token: DEFAULT_NOTION_TOKEN,
+        token: '',
         target: '',
         targetId: '',
         workspaceName: '',
@@ -3953,7 +3958,7 @@
       const infoText = document.getElementById('notion-connected-text');
       const infoLink = document.getElementById('notion-connected-link');
 
-      if (tokenInput) tokenInput.value = config.token || DEFAULT_NOTION_TOKEN;
+      if (tokenInput) tokenInput.value = config.token || '';
       if (targetInput) targetInput.value = config.target || '';
 
       if (config.lastConnected && config.workspaceName) {
@@ -3966,7 +3971,8 @@
           infoBox.classList.add('flex');
         }
         if (infoText) {
-          infoText.textContent = `✓ ${config.workspaceName} [${config.targetTitle || '체크리스트'}]`;
+          const dbCount = (config.databases && config.databases.length) ? ` (과목별 표 ${config.databases.length}개 감지)` : '';
+          infoText.textContent = `✓ ${config.workspaceName} [${config.targetTitle || '체크리스트'}]${dbCount}`;
         }
         if (infoLink) {
           infoLink.href = config.target?.startsWith('http') ? config.target : `https://www.notion.so/${(config.targetId || '').replace(/-/g, '')}`;
@@ -4030,12 +4036,12 @@
       const infoText = document.getElementById('notion-connected-text');
       const infoLink = document.getElementById('notion-connected-link');
 
-      const token = (tokenInput ? tokenInput.value : '').trim() || DEFAULT_NOTION_TOKEN;
+      const token = (tokenInput ? tokenInput.value : '').trim();
       const rawTarget = (targetInput ? targetInput.value : '').trim();
       const targetId = extractNotionId(rawTarget);
 
       if (!token) {
-        alert("노션 통합 토큰(API Key)을 입력해 주세요.");
+        alert("노션 통합 토큰(API Key)을 입력해 주세요.\n\n발급 페이지: https://www.notion.so/my-integrations");
         return;
       }
 
@@ -4101,6 +4107,41 @@
           }
         }
 
+        // 3. Search accessible databases in workspace / page
+        let databases = [];
+        try {
+          const searchRes = await fetch(`${NOTION_API_BASE}/search`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Notion-Version': NOTION_VERSION,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              filter: { property: 'object', value: 'database' },
+              page_size: 100
+            })
+          });
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            databases = (searchData.results || []).map(db => ({
+              id: db.id,
+              title: (db.title || []).map(t => t.plain_text).join('').trim() || '데이터베이스',
+              properties: db.properties || {}
+            }));
+          }
+        } catch(e) {
+          console.warn("Failed to search databases:", e);
+        }
+
+        if (targetType === 'database' && targetId && !databases.some(d => d.id.replace(/-/g, '') === targetId.replace(/-/g, ''))) {
+          databases.unshift({
+            id: targetId,
+            title: targetTitle || '데이터베이스',
+            properties: {}
+          });
+        }
+
         // Update UI
         if (badge) {
           badge.className = "px-2.5 py-0.5 rounded-pill bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-[11px]";
@@ -4112,10 +4153,11 @@
         }
         if (infoText) {
           const typeStr = targetType === 'database' ? '데이터베이스' : (targetType === 'page' ? '페이지' : '워크스페이스');
-          infoText.textContent = `✓ ${wsName} [${typeStr}: ${targetTitle || '연결됨'}]`;
+          const dbSummary = databases.length > 0 ? ` (과목별 표 ${databases.length}개 감지)` : '';
+          infoText.textContent = `✓ ${wsName} [${typeStr}: ${targetTitle || '연결됨'}]${dbSummary}`;
         }
         if (infoLink) {
-          infoLink.href = rawTarget.startsWith('http') ? rawTarget : `https://www.notion.so/${targetId.replace(/-/g, '')}`;
+          infoLink.href = rawTarget.startsWith('http') ? rawTarget : `https://www.notion.so/${targetId ? targetId.replace(/-/g, '') : ''}`;
         }
 
         // Auto save tested config
@@ -4127,10 +4169,12 @@
           targetTitle,
           workspaceName: wsName,
           botName,
+          databases,
           lastConnected: new Date().toISOString()
         };
         saveNotionConfig(config);
-        showToast(`🎉 노션(${wsName}) 연결이 성공적으로 확인되었습니다!`);
+        const dbMsg = databases.length > 0 ? ` (과목별 표 ${databases.length}개 감지)` : '';
+        showToast(`🎉 노션(${wsName}) 연결이 확인되었습니다!${dbMsg}`);
 
       } catch (err) {
         console.error("Notion connection test error:", err);
@@ -4148,9 +4192,18 @@
     function saveNotionSettings() {
       const tokenInput = document.getElementById('notion-token-input');
       const targetInput = document.getElementById('notion-target-input');
-      const token = (tokenInput ? tokenInput.value : '').trim() || DEFAULT_NOTION_TOKEN;
+      const token = (tokenInput ? tokenInput.value : '').trim();
       const rawTarget = (targetInput ? targetInput.value : '').trim();
       const targetId = extractNotionId(rawTarget);
+
+      if (!token) {
+        alert("노션 통합 토큰(API Key)을 입력해 주세요.\n\n발급 페이지: https://www.notion.so/my-integrations");
+        return;
+      }
+      if (!rawTarget) {
+        alert("내 노션 페이지 링크 또는 데이터베이스 ID를 입력해 주세요.");
+        return;
+      }
 
       const oldConfig = getNotionConfig();
       const newConfig = {
@@ -4208,6 +4261,268 @@
       closeAccountSettingsModal();
     }
 
+    function formatCleanNotionTitle(name) {
+      if (!name) return '수능 자료';
+      let t = name.replace(/\.pdf$/i, '').trim();
+      if (!/\d{4}학년도/.test(t)) {
+        t = t.replace(/^20\d\d[_\s-]*/, '');
+      }
+      t = t.replace(/^(국어|수학|영어|한국사|사회문화|생활과윤리|윤리와사상|한국지리|세계지리|동아시아사|세계사|경제|정치와법|물리학1|물리학2|화학1|화학2|생명과학1|생명과학2|지구과학1|지구과학2|물1|화1|생1|지1|사문|생윤|윤사|한지|세지|동사|정법)[_\s-]+/, '');
+      t = t.replace(/^(대성|메가|메가스터디|시대|시대인재|이감|바탕|상상|비상|EBS|대성마이맥)[_\s-]+/, '');
+      t = t.replace(/_/g, ' ');
+      t = t.replace(/문제편/g, '(문제편)')
+           .replace(/해설편/g, '(해설편)')
+           .replace(/정답및해설/g, '(해설편)')
+           .replace(/정답/g, '(정답)')
+           .replace(/문제/g, '(문제편)')
+           .replace(/해설/g, '(해설편)');
+      t = t.replace(/\(\((.*?)\)\)/g, '($1)');
+      t = t.replace(/\s+/g, ' ').trim();
+      return t || name;
+    }
+
+    function findMatchingNotionDatabase(item, databases) {
+      if (!databases || databases.length === 0) return null;
+      if (databases.length === 1) return databases[0];
+
+      const c = (item.c || '').trim();
+      const ds = (item.ds || '').trim();
+      const n = (item.n || '').trim();
+
+      // 1. Literature check
+      if (n.includes('문학') || ds.includes('문학')) {
+        const litDb = databases.find(d => d.title.includes('문학'));
+        if (litDb) return litDb;
+      }
+
+      // 2. Korean check
+      if (c === '국어' || n.includes('국어') || ds.includes('국어')) {
+        const korDb = databases.find(d => d.title.includes('국어') && !d.title.includes('문학'));
+        if (korDb) return korDb;
+        const korAny = databases.find(d => d.title.includes('국어'));
+        if (korAny) return korAny;
+      }
+
+      // 3. Math check
+      if (c === '수학' || n.includes('수학') || ds.includes('수학')) {
+        const mathDb = databases.find(d => d.title.includes('수학'));
+        if (mathDb) return mathDb;
+      }
+
+      // 4. Earth Science check
+      if (c.includes('지구과학') || ds.includes('지구과학') || ds.includes('지1') || ds.includes('지2') || n.includes('지구과학') || n.includes('_지1_') || n.includes('_지2_')) {
+        const earthDb = databases.find(d => d.title.includes('지구') || d.title.includes('지1') || d.title.includes('지2'));
+        if (earthDb) return earthDb;
+      }
+
+      // 5. Society & Culture check
+      if (c.includes('사회문화') || ds.includes('사회문화') || ds.includes('사문') || n.includes('사회문화') || n.includes('사문')) {
+        const socDb = databases.find(d => d.title.includes('사회문화') || d.title.includes('사문'));
+        if (socDb) return socDb;
+      }
+
+      // 6. Check other specific subjects
+      for (const kw of [ds, c]) {
+        if (kw) {
+          const cleanKw = kw.replace(/탐구|영역/g, '').trim();
+          if (cleanKw) {
+            const match = databases.find(d => d.title.includes(cleanKw));
+            if (match) return match;
+          }
+        }
+      }
+
+      // 7. General keyword search in DB title
+      for (const d of databases) {
+        const cleanDbTitle = d.title.replace(/모의고사|기출|체크리스트|표/g, '').trim();
+        if (cleanDbTitle && (n.includes(cleanDbTitle) || (ds && ds.includes(cleanDbTitle)) || (c && c.includes(cleanDbTitle)))) {
+          return d;
+        }
+      }
+
+      // 8. Fallback to first non-log DB
+      const validDbs = databases.filter(d => !d.title.includes('기록') && !d.title.includes('로그'));
+      return validDbs[0] || databases[0];
+    }
+
+    async function getOrFetchDatabases(config) {
+      if (config.databases && config.databases.length > 0) {
+        return config.databases;
+      }
+      try {
+        const res = await fetch(`${NOTION_API_BASE}/search`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${config.token}`,
+            'Notion-Version': NOTION_VERSION,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filter: { property: 'object', value: 'database' },
+            page_size: 100
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const dbs = (data.results || []).map(db => ({
+            id: db.id,
+            title: (db.title || []).map(t => t.plain_text).join('').trim() || '데이터베이스',
+            properties: db.properties || {}
+          }));
+          config.databases = dbs;
+          saveNotionConfig(config);
+          return dbs;
+        }
+      } catch (e) {
+        console.warn("Failed to fetch Notion databases:", e);
+      }
+      return [];
+    }
+
+    async function insertRowToNotionDatabase(item, targetDb, token, memo) {
+      const props = targetDb.properties || {};
+      const titleKey = Object.keys(props).find(k => props[k].type === 'title') || '항목';
+      const checkboxKey = Object.keys(props).find(k => props[k].type === 'checkbox') || (props['완료'] ? '완료' : null);
+      const richTextKey = Object.keys(props).find(k => props[k].type === 'rich_text' && (k.includes('비고') || k.includes('메모') || k.includes('링크') || k.includes('Note'))) || Object.keys(props).find(k => props[k].type === 'rich_text') || (props['비고'] ? '비고' : null);
+      const urlKey = Object.keys(props).find(k => props[k].type === 'url');
+
+      const cleanTitle = formatCleanNotionTitle(item.n);
+      const driveUrl = item.id ? `https://drive.google.com/file/d/${item.id}/view?usp=sharing` : '';
+
+      const pagePayload = {
+        parent: { database_id: targetDb.id },
+        properties: {
+          [titleKey]: {
+            title: [{ text: { content: cleanTitle } }]
+          }
+        }
+      };
+
+      if (checkboxKey) {
+        pagePayload.properties[checkboxKey] = { checkbox: false };
+      }
+
+      if (richTextKey) {
+        const richTextArr = [];
+        if (memo) {
+          richTextArr.push({ type: 'text', text: { content: `${memo} ` } });
+        }
+        if (driveUrl) {
+          richTextArr.push({
+            type: 'text',
+            text: {
+              content: '드라이브 바로가기 ↗',
+              link: { url: driveUrl }
+            }
+          });
+        }
+        if (richTextArr.length > 0) {
+          pagePayload.properties[richTextKey] = { rich_text: richTextArr };
+        }
+      }
+
+      if (urlKey && driveUrl) {
+        pagePayload.properties[urlKey] = { url: driveUrl };
+      }
+
+      const res = await fetch(`${NOTION_API_BASE}/pages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Notion-Version': NOTION_VERSION,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(pagePayload)
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || `HTTP ${res.status}`);
+      }
+
+      return await res.json();
+    }
+
+    async function addSingleItemToNotion(itemId, fileName) {
+      const config = getNotionConfig();
+      if (!config || !config.token) {
+        const proceed = confirm("노션 연동 설정이 아직 완료되지 않았습니다.\n계정 설정에서 노션 토큰을 먼저 등록하시겠습니까?");
+        if (proceed) {
+          openAccountSettingsModal();
+        }
+        return;
+      }
+
+      const item = CATALOG.find(it => (itemId && it.id === itemId) || (fileName && it.n === fileName)) || {
+        id: itemId,
+        n: fileName || '수능 자료',
+        c: '',
+        ds: '',
+        b: ''
+      };
+
+      const cleanTitle = formatCleanNotionTitle(item.n);
+      showToast(`📓 노션에 '${cleanTitle}' 추가 중...`);
+
+      try {
+        let dbs = await getOrFetchDatabases(config);
+        let targetDb = null;
+
+        if (config.targetType === 'database' && config.targetId) {
+          targetDb = dbs.find(d => d.id.replace(/-/g, '') === config.targetId.replace(/-/g, '')) || {
+            id: config.targetId,
+            title: config.targetTitle || '데이터베이스',
+            properties: {}
+          };
+        } else if (dbs.length > 0) {
+          targetDb = findMatchingNotionDatabase(item, dbs);
+        }
+
+        if (targetDb) {
+          await insertRowToNotionDatabase(item, targetDb, config.token, '');
+          showToast(`🎉 [${targetDb.title}]에 '${cleanTitle}' 추가 완료!`);
+        } else if (config.targetId) {
+          const link = item.id ? `https://drive.google.com/file/d/${item.id}/view?usp=sharing` : null;
+          const res = await fetch(`${NOTION_API_BASE}/blocks/${config.targetId}/children`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${config.token}`,
+              'Notion-Version': NOTION_VERSION,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              children: [{
+                object: 'block',
+                type: 'to_do',
+                to_do: {
+                  rich_text: [{
+                    type: 'text',
+                    text: { content: cleanTitle, ...(link ? { link: { url: link } } : {}) }
+                  }],
+                  checked: false
+                }
+              }]
+            })
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          showToast(`🎉 노션 페이지에 '${cleanTitle}' 추가 완료!`);
+        } else {
+          throw new Error("연결 가능한 노션 데이터베이스나 페이지를 찾을 수 없습니다.");
+        }
+      } catch (err) {
+        console.error("Single Notion add error:", err);
+        alert(`[노션 추가 실패]\n\n${err.message || err}`);
+      }
+    }
+
+    function addCurrentPreviewToNotion() {
+      if (!currentPreviewItem) {
+        showToast("⚠️ 현재 미리보기 중인 자료가 없습니다.");
+        return;
+      }
+      addSingleItemToNotion(currentPreviewItem.id, currentPreviewItem.n);
+    }
+
     async function exportBookmarksToNotion() {
       const data = getStudyData();
       const items = CATALOG.filter(it => isItemBookmarked(data.bookmarks, it));
@@ -4218,82 +4533,38 @@
       }
 
       const config = getNotionConfig();
-      if (!config || !config.token || !config.targetId) {
-        const proceed = confirm("노션 연동 설정이 아직 완료되지 않았습니다.\n계정 설정에서 노션 페이지 링크를 먼저 등록하시겠습니까?");
+      if (!config || !config.token) {
+        const proceed = confirm("노션 연동 설정이 아직 완료되지 않았습니다.\n계정 설정에서 노션 페이지 링크와 토큰을 먼저 등록하시겠습니까?");
         if (proceed) {
           openAccountSettingsModal();
         }
         return;
       }
 
-      const confirmMsg = `출력할 거 리스트의 총 ${items.length}개 수능 자료를 내 노션 체크리스트에 추가하시겠습니까?\n\n- 대상: ${config.workspaceName || '내 노션'} (${config.targetTitle || '체크리스트'})\n- 자료 수: ${items.length}개`;
+      const confirmMsg = `출력할 거 리스트의 총 ${items.length}개 수능 자료를 내 노션 과목별 데이터베이스에 추가하시겠습니까?\n\n- 대상 워크스페이스: ${config.workspaceName || '내 노션'}\n- 추가할 자료 수: ${items.length}개`;
       if (!confirm(confirmMsg)) return;
 
       showToast(`📓 노션으로 ${items.length}개 자료를 전송하는 중...`);
 
       try {
         const token = config.token;
-        const targetId = config.targetId;
-        const targetType = config.targetType || 'page';
+        let dbs = await getOrFetchDatabases(config);
 
-        if (targetType === 'database') {
-          // Fetch database schema first to inspect property names
-          const dbRes = await fetch(`${NOTION_API_BASE}/databases/${targetId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Notion-Version': NOTION_VERSION
-            }
-          });
-          if (!dbRes.ok) throw new Error("데이터베이스 정보를 읽어오지 못했습니다.");
-          const dbData = await dbRes.json();
-          const props = dbData.properties || {};
-
-          // Detect property keys
-          let titleKey = Object.keys(props).find(k => props[k].type === 'title') || '항목';
-          let checkboxKey = Object.keys(props).find(k => props[k].type === 'checkbox');
-          let selectKey = Object.keys(props).find(k => props[k].type === 'select');
-          let urlKey = Object.keys(props).find(k => props[k].type === 'url');
-          let textKey = Object.keys(props).find(k => props[k].type === 'rich_text' && (k.includes('비고') || k.includes('메모')));
-
+        if (dbs.length > 0) {
           let addedCount = 0;
           for (const it of items) {
             const bm = getItemBookmarkInfo(data.bookmarks, it) || {};
-            const link = it.id ? `https://drive.google.com/file/d/${it.id}/view?usp=sharing` : '';
-            const pagePayload = {
-              parent: { database_id: targetId },
-              properties: {
-                [titleKey]: {
-                  title: [{ text: { content: it.n } }]
-                }
-              }
-            };
-            if (checkboxKey) {
-              pagePayload.properties[checkboxKey] = { checkbox: false };
-            }
-            if (urlKey && link) {
-              pagePayload.properties[urlKey] = { url: link };
-            }
-            if (selectKey && (it.ds || it.c)) {
-              pagePayload.properties[selectKey] = { select: { name: it.ds || it.c } };
-            }
-            if (textKey && bm.memo) {
-              pagePayload.properties[textKey] = { rich_text: [{ text: { content: bm.memo } }] };
-            }
+            const targetDb = (config.targetType === 'database' && config.targetId) 
+              ? (dbs.find(d => d.id.replace(/-/g, '') === config.targetId.replace(/-/g, '')) || dbs[0])
+              : findMatchingNotionDatabase(it, dbs);
 
-            const res = await fetch(`${NOTION_API_BASE}/pages`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Notion-Version': NOTION_VERSION,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(pagePayload)
-            });
-            if (res.ok) addedCount++;
+            if (targetDb) {
+              await insertRowToNotionDatabase(it, targetDb, token, bm.memo || '');
+              addedCount++;
+            }
           }
-          showToast(`🎉 노션 데이터베이스에 ${addedCount}개 자료 추가 완료!`);
-        } else {
-          // Page Mode: Append to_do blocks
+          showToast(`🎉 노션 데이터베이스에 ${addedCount}개 자료 표 추가 완료!`);
+        } else if (config.targetId) {
           const chunks = [];
           for (let i = 0; i < items.length; i += 80) {
             chunks.push(items.slice(i, i + 80));
@@ -4305,7 +4576,7 @@
               const bm = getItemBookmarkInfo(data.bookmarks, it) || {};
               const link = it.id ? `https://drive.google.com/file/d/${it.id}/view?usp=sharing` : null;
               const memoSuffix = bm.memo ? ` [메모: ${bm.memo}]` : '';
-              const label = `[${it.c || '과목'} / ${it.b || '기타'}] ${it.n}${memoSuffix}`;
+              const cleanTitle = formatCleanNotionTitle(it.n);
 
               return {
                 object: 'block',
@@ -4315,7 +4586,7 @@
                     {
                       type: 'text',
                       text: {
-                        content: label,
+                        content: `${cleanTitle}${memoSuffix}`,
                         ...(link ? { link: { url: link } } : {})
                       }
                     }
@@ -4325,7 +4596,7 @@
               };
             });
 
-            const res = await fetch(`${NOTION_API_BASE}/blocks/${targetId}/children`, {
+            const res = await fetch(`${NOTION_API_BASE}/blocks/${config.targetId}/children`, {
               method: 'PATCH',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -4343,6 +4614,8 @@
           }
 
           showToast(`🎉 노션 체크리스트에 ${addedCount}개 자료 추가 완료!`);
+        } else {
+          throw new Error("연결 가능한 노션 데이터베이스나 페이지를 찾을 수 없습니다.");
         }
 
       } catch (err) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'seoarch-v1';
+const CACHE_NAME = 'seoarch-v2';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
@@ -24,8 +24,19 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  // Always fetch version.json from network
+  if (e.request.url.includes('version.json')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request))
   );

@@ -238,6 +238,25 @@
   <!-- MAIN DASHBOARD APP CONTAINER                             -->
   <!-- ======================================================== -->
   <div id="main-dashboard-app" class="flex flex-col min-h-screen w-full">
+
+  <!-- ======================================================== -->
+  <!-- NEW VERSION DEPLOYMENT NOTIFICATION BANNER               -->
+  <!-- ======================================================== -->
+  <div id="app-update-banner" class="fixed top-0 left-0 right-0 z-[99999] bg-ink/95 backdrop-blur-md text-white px-4 py-3 border-b border-neutral-700 flex flex-col items-center justify-center text-center gap-2 transform -translate-y-full transition-transform duration-300 ease-out shadow-2xl pointer-events-auto">
+    <div class="flex items-center gap-2 font-bold text-xs sm:text-sm">
+      <span class="inline-block animate-bounce text-sm sm:text-base">🔔</span>
+      <span>새 버전이 배포됐습니다. 새로고침해주세요!</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="applyAppUpdateAndReload()" class="px-4 py-1.5 rounded-pill bg-white hover:bg-neutral-100 active:scale-95 text-ink font-bold text-xs shadow transition-all flex items-center gap-1.5 cursor-pointer">
+        <span>🔄</span>
+        <span>지금 새로고침</span>
+      </button>
+      <button onclick="dismissUpdateBanner()" class="px-2.5 py-1.5 rounded-pill bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs transition-colors" title="나중에 알림">
+        닫기
+      </button>
+    </div>
+  </div>
   <!-- ======================================================== -->
   <!-- FLOATING NAVIGATION BAR (Touch-Optimized Stadium Pill)   -->
   <!-- ======================================================== -->
@@ -3433,10 +3452,91 @@
       }
     }, { passive: true });
 
-    // PWA Service Worker Registration
+    // ==========================================
+    // AUTO UPDATE DETECTION & REFRESH BANNER
+    // ==========================================
+    const CURRENT_APP_VERSION = 1793618691;
+    let updateBannerDismissed = false;
+
+    function showUpdateBanner() {
+      if (updateBannerDismissed) return;
+      const banner = document.getElementById('app-update-banner');
+      if (banner) {
+        banner.classList.remove('-translate-y-full');
+        banner.classList.add('translate-y-0');
+      }
+    }
+
+    function dismissUpdateBanner() {
+      updateBannerDismissed = true;
+      const banner = document.getElementById('app-update-banner');
+      if (banner) {
+        banner.classList.remove('translate-y-0');
+        banner.classList.add('-translate-y-full');
+      }
+    }
+
+    function applyAppUpdateAndReload() {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg && reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }).catch(() => {});
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set('_v', Date.now());
+      window.location.href = url.toString();
+    }
+
+    async function checkForAppUpdates() {
+      try {
+        const res = await fetch('./version.json?_t=' + Date.now(), {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.version && Number(data.version) > Number(CURRENT_APP_VERSION)) {
+            console.log('[Update Checker] New version deployed:', data.version, 'Current:', CURRENT_APP_VERSION);
+            showUpdateBanner();
+          }
+        }
+      } catch (e) {
+        // Network offline or failed
+      }
+    }
+
+    // Check after 3 seconds, every 60 seconds, and when tab regains focus
+    setTimeout(checkForAppUpdates, 3000);
+    setInterval(checkForAppUpdates, 60000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkForAppUpdates();
+      }
+    });
+
+    // PWA Service Worker Registration & Live Update Listener
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg fail:', err));
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  showUpdateBanner();
+                }
+              });
+            }
+          });
+        }).catch(err => console.log('SW reg fail:', err));
+      });
+
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
+          showUpdateBanner();
+        }
       });
     }
 

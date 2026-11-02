@@ -1910,59 +1910,68 @@
         }
       } catch(e) {}
 
-      // MIGRATION & RECOVERY:
-      // If user is logged in, check if guest or legacy data exists and merge it
+      // ONE-TIME MIGRATION ONLY:
       const user = getCurrentUser();
       if (user && user.username) {
-        let needSave = false;
-        try {
-          const guestRaw = localStorage.getItem('SEOARCH_STUDY_DATA_guest');
-          if (guestRaw) {
-            const guestData = JSON.parse(guestRaw);
-            if (guestData && guestData.bookmarks) {
-              for (const [k, v] of Object.entries(guestData.bookmarks)) {
-                if (!data.bookmarks[k]) {
-                  data.bookmarks[k] = v;
-                  needSave = true;
+        const migrationKey = 'SEOARCH_MIGRATED_GUEST_' + user.username;
+        if (!localStorage.getItem(migrationKey)) {
+          let needSave = false;
+          try {
+            const guestRaw = localStorage.getItem('SEOARCH_STUDY_DATA_guest');
+            if (guestRaw) {
+              const guestData = JSON.parse(guestRaw);
+              if (guestData && guestData.bookmarks) {
+                for (const [k, v] of Object.entries(guestData.bookmarks)) {
+                  if (!data.bookmarks[k]) {
+                    data.bookmarks[k] = v;
+                    needSave = true;
+                  }
+                }
+              }
+              if (guestData && guestData.solved) {
+                for (const [k, v] of Object.entries(guestData.solved)) {
+                  if (!data.solved[k]) {
+                    data.solved[k] = v;
+                    needSave = true;
+                  }
                 }
               }
             }
-            if (guestData && guestData.solved) {
-              for (const [k, v] of Object.entries(guestData.solved)) {
-                if (!data.solved[k]) {
-                  data.solved[k] = v;
-                  needSave = true;
-                }
-              }
-            }
-          }
-        } catch(e) {}
+          } catch(e) {}
 
-        try {
-          const legacyRaw = localStorage.getItem('SEOARCH_STUDY_DATA');
-          if (legacyRaw) {
-            const legData = JSON.parse(legacyRaw);
-            if (legData && legData.bookmarks) {
-              for (const [k, v] of Object.entries(legData.bookmarks)) {
-                if (!data.bookmarks[k]) {
-                  data.bookmarks[k] = v;
-                  needSave = true;
+          try {
+            const legacyRaw = localStorage.getItem('SEOARCH_STUDY_DATA');
+            if (legacyRaw) {
+              const legData = JSON.parse(legacyRaw);
+              if (legData && legData.bookmarks) {
+                for (const [k, v] of Object.entries(legData.bookmarks)) {
+                  if (!data.bookmarks[k]) {
+                    data.bookmarks[k] = v;
+                    needSave = true;
+                  }
+                }
+              }
+              if (legData && legData.solved) {
+                for (const [k, v] of Object.entries(legData.solved)) {
+                  if (!data.solved[k]) {
+                    data.solved[k] = v;
+                    needSave = true;
+                  }
                 }
               }
             }
-            if (legData && legData.solved) {
-              for (const [k, v] of Object.entries(legData.solved)) {
-                if (!data.solved[k]) {
-                  data.solved[k] = v;
-                  needSave = true;
-                }
-              }
-            }
-          }
-        } catch(e) {}
+          } catch(e) {}
 
-        if (needSave) {
-          try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+          try {
+            localStorage.removeItem('SEOARCH_STUDY_DATA_guest');
+            localStorage.removeItem('SEOARCH_STUDY_DATA');
+            localStorage.setItem(migrationKey, 'true');
+          } catch(e) {}
+
+          if (needSave) {
+            data.updated_at = new Date().toISOString();
+            try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+          }
         }
       }
 
@@ -1971,6 +1980,7 @@
 
     function saveStudyData(data) {
       try {
+        data.updated_at = new Date().toISOString();
         localStorage.setItem(getStudyDataKey(), JSON.stringify(data));
       } catch(e) {}
       updateBookmarkBadges();
@@ -3455,7 +3465,7 @@
     // ==========================================
     // AUTO UPDATE DETECTION & REFRESH BANNER
     // ==========================================
-    const CURRENT_APP_VERSION = 1793618691;
+    const CURRENT_APP_VERSION = 1793618956;
     let updateBannerDismissed = false;
 
     function showUpdateBanner() {
@@ -3823,54 +3833,31 @@
         const cloudUpdatedAt = cloudPayload.updated_at ? new Date(cloudPayload.updated_at).getTime() : 0;
         const localUpdatedAt = localData.updated_at ? new Date(localData.updated_at).getTime() : 0;
 
-        // If local has no updated_at, perform initial union merge
+        // If local has no updated_at, adopt cloud data
         if (!localData.updated_at) {
-          if (!localData.bookmarks) localData.bookmarks = {};
-          if (!localData.solved) localData.solved = {};
-
-          for (const [k, v] of Object.entries(cloudBookmarks)) {
-            if (!localData.bookmarks[k]) localData.bookmarks[k] = v;
-          }
-          for (const [k, v] of Object.entries(cloudSolved)) {
-            if (v && !localData.solved[k]) localData.solved[k] = v;
-          }
+          localData.bookmarks = cloudBookmarks || {};
+          localData.solved = cloudSolved || {};
           localData.updated_at = cloudPayload.updated_at || new Date().toISOString();
           try {
             localStorage.setItem(getStudyDataKey(), JSON.stringify(localData));
           } catch(e) {}
           updateBookmarkBadges();
           if (typeof render === 'function') render();
-          pushStudyDataToCloud(localData);
           return;
         }
 
         if (cloudUpdatedAt > localUpdatedAt) {
-          let offlineAdded = false;
-          if (!cloudSolved) cloudSolved = {};
-          for (const [k, v] of Object.entries(localData.solved || {})) {
-            if (v && !cloudSolved[k]) {
-              cloudSolved[k] = v;
-              offlineAdded = true;
-            }
-          }
-          if (!cloudBookmarks) cloudBookmarks = {};
-          for (const [k, v] of Object.entries(localData.bookmarks || {})) {
-            if (!cloudBookmarks[k]) {
-              cloudBookmarks[k] = v;
-              offlineAdded = true;
-            }
-          }
-
-          localData.bookmarks = cloudBookmarks;
-          localData.solved = cloudSolved;
-          localData.updated_at = offlineAdded ? new Date().toISOString() : cloudPayload.updated_at;
+          // Cloud has newer data from another device/browser: adopt cloud state
+          localData.bookmarks = cloudBookmarks || {};
+          localData.solved = cloudSolved || {};
+          localData.updated_at = cloudPayload.updated_at;
           try {
             localStorage.setItem(getStudyDataKey(), JSON.stringify(localData));
           } catch(e) {}
           updateBookmarkBadges();
           if (typeof render === 'function') render();
-          if (offlineAdded) pushStudyDataToCloud(localData);
         } else if (localUpdatedAt > cloudUpdatedAt) {
+          // Local has newer changes (including any removed bookmarks): push to cloud
           pushStudyDataToCloud(localData);
         }
       } catch(e) {
@@ -6290,6 +6277,34 @@
         syncAdminRenamesFromCloud();
       }
     });
+
+    // One-time scrub for phantom law bookmarks if any exist locally
+    try {
+      if (!localStorage.getItem('SEOARCH_SCRUBBED_LAW_V1')) {
+        const u = getCurrentUser();
+        if (u && u.username) {
+          const sKey = 'SEOARCH_STUDY_DATA_' + u.username;
+          const sRaw = localStorage.getItem(sKey);
+          if (sRaw) {
+            const sData = JSON.parse(sRaw);
+            if (sData && sData.bookmarks) {
+              let changed = false;
+              for (const k of Object.keys(sData.bookmarks)) {
+                if (k.includes('정치와법') || k.includes('정법')) {
+                  delete sData.bookmarks[k];
+                  changed = true;
+                }
+              }
+              if (changed) {
+                sData.updated_at = new Date().toISOString();
+                localStorage.setItem(sKey, JSON.stringify(sData));
+              }
+            }
+          }
+        }
+        localStorage.setItem('SEOARCH_SCRUBBED_LAW_V1', 'true');
+      }
+    } catch(e) {}
 
     // Init
     initLocalUsersDb();

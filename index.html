@@ -3471,7 +3471,7 @@
     // ==========================================
     // AUTO UPDATE DETECTION & REFRESH BANNER
     // ==========================================
-    const CURRENT_APP_VERSION = 1793621351;
+    const CURRENT_APP_VERSION = 1793621828;
     let updateBannerDismissed = false;
 
     function showUpdateBanner() {
@@ -5003,48 +5003,82 @@
       return t || name;
     }
 
-    function findMatchingNotionDatabase(item, databases) {
+        function findMatchingNotionDatabase(item, databases) {
       if (!databases || databases.length === 0) return null;
       if (databases.length === 1) return databases[0];
 
       const c = (item.c || '').trim();
       const ds = (item.ds || '').trim();
       const n = (item.n || '').trim();
+      const b = (item.b || '').trim();
 
-      // 1. Literature check
-      if (n.includes('문학') || ds.includes('문학')) {
+      // 1. English check (Check English instructors, brands, keywords)
+      const engKeywords = ['조정식', '션티', '이명학', '그랜드슬램', '키스', 'masterpiece', 'thedayisyourday', 'master piece', 'kiss', 'v단어', '믿어봐', '확실해'];
+      const isEnglish = c === '영어' || ds.includes('영어') || n.includes('영어') ||
+                        engKeywords.some(k => n.toLowerCase().includes(k) || b.toLowerCase().includes(k));
+      if (isEnglish) {
+        const engDb = databases.find(d => d.title.includes('영어'));
+        if (engDb) return engDb;
+      }
+
+      // 2. Korean History check
+      if (c.includes('한국사') || ds.includes('한국사') || n.includes('한국사') || b.includes('한국사')) {
+        const histDb = databases.find(d => d.title.includes('한국사'));
+        if (histDb) return histDb;
+      }
+
+      // 3. Korean Literature check
+      if (n.includes('문학') || ds.includes('문학') || (c === '국어' && (n.includes('기출') || ds.includes('기출')) && databases.some(d => d.title.includes('문학')) && !databases.some(d => d.title.includes('국어 기출')))) {
         const litDb = databases.find(d => d.title.includes('문학'));
         if (litDb) return litDb;
       }
 
-      // 2. Korean check
-      if (c === '국어' || n.includes('국어') || ds.includes('국어')) {
+      // 4. Korean (Mock / general) check
+      if (c === '국어' || n.includes('국어') || ds.includes('국어') || ['이감', '상상', '한수', '바탕', '간쓸개', '온리원'].some(k => n.includes(k) || b.includes(k))) {
         const korDb = databases.find(d => d.title.includes('국어') && !d.title.includes('문학'));
         if (korDb) return korDb;
         const korAny = databases.find(d => d.title.includes('국어'));
         if (korAny) return korAny;
       }
 
-      // 3. Math check
-      if (c === '수학' || n.includes('수학') || ds.includes('수학')) {
+      // 5. Math check
+      if (c === '수학' || n.includes('수학') || ds.includes('수학') || ['현우진', '한석원', '배성민', '이창무', '이해원', '드릴', '킬러코드', '서바이벌', '시대인재 수학'].some(k => n.includes(k) || b.includes(k))) {
         const mathDb = databases.find(d => d.title.includes('수학'));
         if (mathDb) return mathDb;
       }
 
-      // 4. Earth Science check
+      // 6. Society & Culture check
+      if (c.includes('사회문화') || ds.includes('사회문화') || ds.includes('사문') || n.includes('사회문화') || n.includes('사문') || b.includes('사문')) {
+        const socDb = databases.find(d => d.title.includes('사회문화') || d.title.includes('사문'));
+        if (socDb) return socDb;
+      }
+
+      // 7. Ethics & Ideology (윤리와사상)
+      if (c.includes('윤리와사상') || ds.includes('윤리와사상') || ds.includes('윤사') || n.includes('윤리와사상') || n.includes('윤사')) {
+        const yoonDb = databases.find(d => d.title.includes('윤리와사상') || d.title.includes('윤사'));
+        if (yoonDb) return yoonDb;
+      }
+
+      // 8. Life & Ethics (생활과윤리)
+      if (c.includes('생활과윤리') || ds.includes('생활과윤리') || ds.includes('생윤') || n.includes('생활과윤리') || n.includes('생윤')) {
+        const saengDb = databases.find(d => d.title.includes('생활과윤리') || d.title.includes('생윤'));
+        if (saengDb) return saengDb;
+      }
+
+      // 9. Politics & Law (정치와법)
+      if (c.includes('정치와법') || ds.includes('정치와법') || ds.includes('정법') || n.includes('정치와법') || n.includes('정법')) {
+        const polDb = databases.find(d => d.title.includes('정치와법') || d.title.includes('정법'));
+        if (polDb) return polDb;
+      }
+
+      // 10. Earth Science check
       if (c.includes('지구과학') || ds.includes('지구과학') || ds.includes('지1') || ds.includes('지2') || n.includes('지구과학') || n.includes('_지1_') || n.includes('_지2_')) {
         const earthDb = databases.find(d => d.title.includes('지구') || d.title.includes('지1') || d.title.includes('지2'));
         if (earthDb) return earthDb;
       }
 
-      // 5. Society & Culture check
-      if (c.includes('사회문화') || ds.includes('사회문화') || ds.includes('사문') || n.includes('사회문화') || n.includes('사문')) {
-        const socDb = databases.find(d => d.title.includes('사회문화') || d.title.includes('사문'));
-        if (socDb) return socDb;
-      }
-
-      // 6. Check other specific subjects
-      for (const kw of [ds, c]) {
+      // 11. Check other specific subjects
+      for (const kw of [ds, c, b]) {
         if (kw) {
           const cleanKw = kw.replace(/탐구|영역/g, '').trim();
           if (cleanKw) {
@@ -5054,7 +5088,7 @@
         }
       }
 
-      // 7. General keyword search in DB title
+      // 12. General keyword search in DB title
       for (const d of databases) {
         const cleanDbTitle = d.title.replace(/모의고사|기출|체크리스트|표/g, '').trim();
         if (cleanDbTitle && (n.includes(cleanDbTitle) || (ds && ds.includes(cleanDbTitle)) || (c && c.includes(cleanDbTitle)))) {
@@ -5062,13 +5096,19 @@
         }
       }
 
-      // 8. Fallback to first non-log DB
+      // 13. Fallback: if category exists, try to match by category first
+      if (c) {
+        const catDb = databases.find(d => d.title.includes(c));
+        if (catDb) return catDb;
+      }
+
+      // 14. Fallback to first non-log DB
       const validDbs = databases.filter(d => !d.title.includes('기록') && !d.title.includes('로그'));
       return validDbs[0] || databases[0];
     }
 
-    async function getOrFetchDatabases(config) {
-      if (config.databases && config.databases.length > 0) {
+    async function getOrFetchDatabases(config, forceRefresh = false) {
+      if (!forceRefresh && config.databases && config.databases.length > 0 && config.lastFetched && (Date.now() - config.lastFetched < 300000)) {
         return config.databases;
       }
       try {
@@ -5092,13 +5132,14 @@
             properties: db.properties || {}
           }));
           config.databases = dbs;
+          config.lastFetched = Date.now();
           saveNotionConfig(config);
           return dbs;
         }
       } catch (e) {
-        console.warn("Failed to fetch Notion databases:", e);
+        console.warn('Failed to fetch Notion databases:', e);
       }
-      return [];
+      return config.databases || [];
     }
 
     async function insertRowToNotionDatabase(item, targetDb, token, memo) {

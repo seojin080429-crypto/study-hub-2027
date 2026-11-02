@@ -4505,10 +4505,11 @@
             continue;
           }
 
-          // Create database
+          // Create database (inline table)
           const dbPayload = {
             parent: { type: 'page_id', page_id: targetId },
             title: [{ type: 'text', text: { content: subj } }],
+            is_inline: true,
             properties: {
               '항목': { title: {} },
               '완료': { checkbox: {} },

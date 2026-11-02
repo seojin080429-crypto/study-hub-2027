@@ -3471,7 +3471,7 @@
     // ==========================================
     // AUTO UPDATE DETECTION & REFRESH BANNER
     // ==========================================
-    const CURRENT_APP_VERSION = 1793621063;
+    const CURRENT_APP_VERSION = 1793621351;
     let updateBannerDismissed = false;
 
     function showUpdateBanner() {
@@ -4653,7 +4653,7 @@
           })
         });
 
-        // Automatically apply ascending sort (회차순/이름순 오름차순 정렬) to all views
+        // Automatically apply [항목, 완료, 비고] property order & sorts
         try {
           const freshMdRes = await fetch(`${NOTION_API_BASE}/pages/${targetId}/markdown`, {
             headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': NOTION_VERSION }
@@ -4661,6 +4661,7 @@
           if (freshMdRes.ok) {
             const freshMdData = await freshMdRes.json();
             const dbBlockRegex = /<database\s+url="https:\/\/app\.notion\.com\/p\/([a-f0-9]{32})"/g;
+            const dsCache = {};
             let m;
             while ((m = dbBlockRegex.exec(freshMdData.markdown || '')) !== null) {
               const raw = m[1];
@@ -4672,11 +4673,55 @@
                 if (vRes.ok) {
                   const vData = await vRes.json();
                   for (const v of vData.results || []) {
-                    await fetch(`${NOTION_API_BASE}/views/${v.id}`, {
-                      method: 'PATCH',
-                      headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': '2026-03-11', 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ sorts: [{ property: 'title', direction: 'ascending' }] })
-                    }).catch(() => {});
+                    try {
+                      const vDetailRes = await fetch(`${NOTION_API_BASE}/views/${v.id}`, {
+                        headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': '2026-03-11' }
+                      });
+                      if (!vDetailRes.ok) continue;
+                      const vDetail = await vDetailRes.json();
+                      const dsId = vDetail.data_source_id;
+                      if (!dsId) continue;
+
+                      if (!dsCache[dsId]) {
+                        const dsRes = await fetch(`${NOTION_API_BASE}/data_sources/${dsId}`, {
+                          headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': '2026-03-11' }
+                        });
+                        if (dsRes.ok) dsCache[dsId] = await dsRes.json();
+                      }
+                      const dsData = dsCache[dsId] || {};
+                      const dsTitle = dsData.title?.[0]?.plain_text || '';
+                      const props = dsData.properties || {};
+
+                      let titleId = 'title';
+                      let completeId = null;
+                      let memoId = null;
+                      for (const [pName, pInfo] of Object.entries(props)) {
+                        if (pInfo.type === 'title' || pName.includes('항목')) titleId = pInfo.id || 'title';
+                        else if (pInfo.type === 'checkbox' || pName.includes('완료')) completeId = pInfo.id;
+                        else if (pInfo.type === 'rich_text' || pName.includes('비고')) memoId = pInfo.id;
+                      }
+
+                      const propList = [{ property_id: titleId, visible: true }];
+                      if (completeId) propList.push({ property_id: completeId, visible: true });
+                      if (memoId) propList.push({ property_id: memoId, visible: true });
+                      for (const [pName, pInfo] of Object.entries(props)) {
+                        if (![titleId, completeId, memoId].includes(pInfo.id)) {
+                          propList.push({ property_id: pInfo.id, visible: false });
+                        }
+                      }
+
+                      const isLiterature = dsTitle.includes('문학') || (vDetail.name || '').includes('문학');
+                      const direction = isLiterature ? 'descending' : 'ascending';
+
+                      await fetch(`${NOTION_API_BASE}/views/${v.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': '2026-03-11', 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          sorts: [{ property: 'title', direction }],
+                          configuration: { type: 'table', properties: propList }
+                        })
+                      }).catch(() => {});
+                    } catch (_) {}
                   }
                 }
               } catch (_) {}

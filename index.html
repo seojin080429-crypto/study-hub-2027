@@ -1020,24 +1020,32 @@
             <!-- 1. Notion API Token -->
             <div>
               <div class="flex items-center justify-between mb-1">
-                <label class="font-bold text-ink">1. 노션 통합 토큰 (API Key)</label>
-                <span class="text-[10px] text-text-faint">Internal Integration Secret</span>
+                <label class="font-bold text-ink flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded-full bg-ink text-white inline-flex items-center justify-center text-[10px]">1</span>
+                  <span>노션 통합 토큰 (API Key)</span>
+                </label>
+                <a href="https://www.notion.so/my-integrations" target="_blank" class="text-[11px] text-blue-600 hover:text-blue-800 font-bold underline flex items-center gap-0.5">
+                  <span>🔗 토큰 발급 페이지</span> ↗
+                </a>
               </div>
               <input type="password" id="notion-token-input" placeholder="ntn_... 또는 secret_... 토큰 입력" class="w-full bg-field border border-hairline rounded-tile px-3.5 py-2.5 text-xs text-ink font-mono outline-none focus:ring-2 focus:ring-ink focus:bg-white transition-all" />
-              <p class="text-[10px] text-text-muted mt-1 leading-normal">
-                <a href="https://www.notion.so/my-integrations" target="_blank" class="underline text-ink font-semibold">노션 내 통합(notion.so/my-integrations)</a>에서 발급받은 본인의 프라이빗 API 토큰을 입력해 주세요.
+              <p class="text-[11px] text-text-muted mt-1 leading-normal">
+                <a href="https://www.notion.so/my-integrations" target="_blank" class="underline text-ink font-semibold">노션 내 통합(notion.so/my-integrations)</a>에서 [+ 새 통합]을 만들어 발급받은 프라이빗 API 토큰을 붙여넣으세요.
               </p>
             </div>
 
-            <!-- 2. Target Page or Database URL/ID -->
+            <!-- 2. Target Page Link -->
             <div>
               <div class="flex items-center justify-between mb-1">
-                <label class="font-bold text-ink">2. 내 노션 체크리스트 페이지 링크 (또는 데이터베이스 ID)</label>
-                <span class="text-[10px] text-text-faint">Page URL / DB ID</span>
+                <label class="font-bold text-ink flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded-full bg-ink text-white inline-flex items-center justify-center text-[10px]">2</span>
+                  <span>내 노션 체크리스트 페이지 링크</span>
+                </label>
+                <span class="text-[10px] text-text-faint">Page URL</span>
               </div>
               <input type="text" id="notion-target-input" placeholder="예: https://www.notion.so/... 또는 3fd2597cfc1f8136a1c4e3c22bb56c56" class="w-full bg-field border border-hairline rounded-tile px-3.5 py-2.5 text-xs text-ink font-mono outline-none focus:ring-2 focus:ring-ink focus:bg-white transition-all" />
-              <p class="text-[10px] text-text-muted mt-1 leading-normal">
-                웹 브라우저의 노션 페이지 주소(URL)를 복사해서 그대로 붙여넣으시면 ID가 자동 추출됩니다.
+              <p class="text-[11px] text-text-muted mt-1 leading-normal">
+                자료를 담을 노션 페이지의 주소창 링크를 복사해 붙여넣으세요. (반드시 해당 페이지에서 봇을 '연결'해야 접근 가능)
               </p>
             </div>
 
@@ -1054,18 +1062,201 @@
             </div>
           </div>
 
-          <!-- Guide Card (Collapsible) -->
-          <div class="border border-hairline rounded-2xl p-3.5 bg-canvas-soft/70">
-            <details class="cursor-pointer text-xs">
-              <summary class="font-bold text-ink hover:underline select-none flex items-center justify-between">
-                <span>💡 노션 1분 연동 방법 (권한 허용 안내)</span>
-                <span class="text-[11px] text-text-muted">자세히 보기 ▾</span>
+          <!-- Feature: Automatic Subject Databases Creation -->
+          <div class="border border-blue-200 bg-blue-50/50 rounded-2xl p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🪄</span>
+                <div>
+                  <h4 class="font-bold text-xs sm:text-sm text-blue-950">과목별 데이터베이스(표) 원클릭 자동 생성</h4>
+                  <p class="text-[11px] text-blue-800">노션 페이지에 직접 표를 만들 필요 없이, 한 번에 수능 과목별 표를 만듭니다.</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-bold text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-pill flex-shrink-0">자동화</span>
+            </div>
+
+            <!-- Preset Buttons -->
+            <div class="flex items-center gap-1.5 flex-wrap pt-1 text-[11px]">
+              <span class="font-bold text-blue-950 text-[10px] mr-1">빠른 선택:</span>
+              <button type="button" onclick="setSubjectPreset('core')" class="px-2 py-0.5 rounded-pill bg-white hover:bg-blue-100 border border-blue-200 text-blue-900 font-semibold transition-colors">주요과목 (국·수·영·문학)</button>
+              <button type="button" onclick="setSubjectPreset('humanities')" class="px-2 py-0.5 rounded-pill bg-white hover:bg-blue-100 border border-blue-200 text-blue-900 font-semibold transition-colors">문과 세트</button>
+              <button type="button" onclick="setSubjectPreset('sciences')" class="px-2 py-0.5 rounded-pill bg-white hover:bg-blue-100 border border-blue-200 text-blue-900 font-semibold transition-colors">이과 세트</button>
+              <button type="button" onclick="setSubjectPreset('all')" class="px-2 py-0.5 rounded-pill bg-white hover:bg-blue-100 border border-blue-200 text-blue-900 font-semibold transition-colors">전체 선택</button>
+              <button type="button" onclick="setSubjectPreset('none')" class="px-2 py-0.5 rounded-pill bg-white hover:bg-blue-100 border border-blue-200 text-text-muted font-semibold transition-colors">전체 해제</button>
+            </div>
+
+            <!-- Subject Chips Selection -->
+            <div id="notion-subject-chips" class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-white/80 rounded-xl border border-blue-100">
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="국어 모의고사" checked class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>국어 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="국어 문학기출" checked class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>국어 문학기출</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="수학 모의고사" checked class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>수학 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="영어 모의고사" checked class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>영어 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="한국사 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>한국사 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="사회문화 모의고사" checked class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>사회문화 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="생활과윤리 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>생활과윤리 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="지구과학 모의고사" checked class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>지구과학 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="생명과학 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>생명과학 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="물리학 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>물리학 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="화학 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>화학 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="윤리와사상 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>윤리와사상 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="한국지리 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>한국지리 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="세계지리 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>세계지리 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="정치와법 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>정치와법 모의고사</span>
+              </label>
+              <label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill border border-blue-200 bg-white text-ink text-[11px] font-semibold hover:bg-blue-50 transition-colors">
+                <input type="checkbox" value="경제 모의고사" class="w-3.5 h-3.5 accent-blue-600 rounded">
+                <span>경제 모의고사</span>
+              </label>
+            </div>
+
+            <!-- Create Button -->
+            <button onclick="createDefaultSubjectDatabases()" id="btn-create-notion-dbs" class="py-2.5 px-4 rounded-pill bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
+              <span>🪄</span>
+              <span id="btn-create-notion-dbs-text">선택한 과목 표 노션에 자동 생성하기</span>
+            </button>
+            <p class="text-[10px] text-blue-900/70 text-center">
+              ※ 이미 노션 페이지에 존재하는 표는 자동으로 감지하여 건너뛰므로 중복 생성되지 않습니다.
+            </p>
+          </div>
+
+          <!-- Detailed Notion Guide Card -->
+          <div class="border border-hairline rounded-2xl p-4 bg-canvas-soft/80 flex flex-col gap-3">
+            <div class="flex items-center justify-between pb-2 border-b border-hairline-soft">
+              <div class="flex items-center gap-2">
+                <span class="text-base">📘</span>
+                <h4 class="font-bold text-xs sm:text-sm text-ink">노션 연동 완전 가이드 (초보자 3분 완성)</h4>
+              </div>
+              <span class="text-[10px] text-text-muted bg-white border border-hairline px-2 py-0.5 rounded-pill font-medium">초간단 4단계</span>
+            </div>
+
+            <div class="flex flex-col gap-3 text-xs leading-relaxed text-text-muted">
+              <!-- Step 1 -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-5 h-5 rounded-full bg-ink text-white flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">1</div>
+                <div class="flex-1 flex flex-col gap-1">
+                  <div class="flex items-center justify-between flex-wrap gap-1">
+                    <strong class="text-ink font-bold">노션 API 통합(Integration) 토큰 발급하기</strong>
+                    <a href="https://www.notion.so/my-integrations" target="_blank" class="px-2 py-0.5 rounded-md bg-white border border-hairline text-ink font-bold text-[10px] hover:bg-neutral-100 transition-colors flex items-center gap-1">
+                      <span>🔗 발급 페이지 바로가기</span> ↗
+                    </a>
+                  </div>
+                  <p class="text-[11px]">
+                    ① 위 링크를 누른 후 우측 상단 <strong>[+ 새 통합 만들기 (New integration)]</strong>를 누릅니다.<br>
+                    ② 이름에 <code class="px-1 py-0.5 rounded bg-white text-ink font-mono text-[10px]">수능자료봇</code> 등 원하는 이름을 입력하고 [저장]합니다.<br>
+                    ③ 발급된 <strong>'내부 통합 시크릿(Internal Integration Secret)'</strong> 키(<span class="font-mono text-ink">ntn_...</span> 또는 <span class="font-mono text-ink">secret_...</span>)를 복사하여 <strong>위 1번 토큰 칸</strong>에 붙여넣습니다.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-5 h-5 rounded-full bg-ink text-white flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">2</div>
+                <div class="flex-1 flex flex-col gap-1">
+                  <div class="flex items-center justify-between flex-wrap gap-1">
+                    <strong class="text-ink font-bold">노션 페이지 생성 및 봇 권한 연결 (★ 필수 핵심!)</strong>
+                    <span class="text-[10px] text-red-600 font-bold bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">404 방지</span>
+                  </div>
+                  <p class="text-[11px]">
+                    ① 내 노션에서 수능 자료를 모아둘 <strong>새 페이지</strong>를 만듭니다 (예: <span class="text-ink font-semibold">2027 수능 체크리스트</span>).<br>
+                    ② 해당 노션 페이지의 우측 상단 <strong>··· (점 3개 더보기)</strong> 버튼을 클릭합니다.<br>
+                    ③ 메뉴 아래쪽의 <strong>[연결 (Connect to)]</strong>을 클릭한 뒤, 1단계에서 만든 봇 이름(예: <span class="text-ink font-semibold">수능자료봇</span>)을 검색하여 <strong>추가</strong>합니다!<br>
+                    <span class="text-red-700 font-semibold bg-red-50/80 px-1.5 py-0.5 rounded block mt-0.5">⚠️ 이 단계를 건너뛰면 노션 보안 정책 때문에 '페이지를 찾을 수 없음(404)' 오류가 발생합니다.</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-5 h-5 rounded-full bg-ink text-white flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">3</div>
+                <div class="flex-1 flex flex-col gap-1">
+                  <strong class="text-ink font-bold">페이지 링크 복사 & 연결 테스트</strong>
+                  <p class="text-[11px]">
+                    ① 웹 브라우저 상단의 주소창 URL(또는 노션 페이지의 [공유] ➔ [링크 복사])을 복사하여 <strong>위 2번 링크 칸</strong>에 붙여넣습니다.<br>
+                    ② <strong>[⚡ 연결 테스트 및 확인]</strong> 버튼을 누르면 내 노션 워크스페이스와 연결이 즉시 확인됩니다.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Step 4 -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-5 h-5 rounded-full bg-ink text-white flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">4</div>
+                <div class="flex-1 flex flex-col gap-1">
+                  <strong class="text-ink font-bold">기본 과목 표 자동 생성 & 클릭 한 번으로 자료 담기</strong>
+                  <p class="text-[11px]">
+                    ① 위의 <strong>[과목별 데이터베이스(표) 원클릭 자동 세팅]</strong>에서 응시하는 과목을 고르고 버튼을 누르면, 빈 페이지에 국어·수학·탐구 등 깔끔한 표가 순식간에 생깁니다.<br>
+                    ② 이제 대시보드의 자료 카드 우측 <strong>[📓]</strong> 버튼이나 PDF 미리보기 화면의 <strong>[📓 노션]</strong> 버튼을 누르면 과목별 표에 착착 정리됩니다!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ / Troubleshooting Collapsible -->
+            <details class="cursor-pointer text-xs border-t border-hairline-soft pt-2.5 mt-1">
+              <summary class="font-bold text-ink hover:underline select-none flex items-center justify-between text-[11px]">
+                <span>❓ 자주 묻는 질문 및 오류 해결 (FAQ)</span>
+                <span class="text-[10px] text-text-muted">클릭하여 펼치기 ▾</span>
               </summary>
-              <div class="pt-3 text-[11px] text-text-muted leading-relaxed flex flex-col gap-1.5 border-t border-hairline-soft mt-2.5">
-                <p>1. <a href="https://www.notion.so/my-integrations" target="_blank" class="underline font-bold text-ink">노션 API 통합(Integration)</a>을 생성하고 발급받은 프라이빗 API 시크릿을 위 1번에 붙여넣습니다.</p>
-                <p>2. 내 노션에서 추가하고 싶은 페이지(예: <strong>과목별 체크리스트</strong>)를 엽니다.</p>
-                <p>3. 페이지 우측 상단 <strong>··· (더보기)</strong> 버튼 클릭 → <strong>연결 (Connect to)</strong>에서 생성한 통합 봇을 추가(페이지 권한 허용)</p>
-                <p>4. 브라우저 주소창의 링크를 복사하여 위 <strong>[페이지 링크]</strong>에 붙여넣고 <strong>[연결 테스트]</strong> 클릭!</p>
+              <div class="pt-2 text-[11px] text-text-muted leading-relaxed flex flex-col gap-2 mt-1">
+                <div>
+                  <p class="font-bold text-ink">Q. '노션 페이지를 찾을 수 없습니다 (404)' 오류가 떠요!</p>
+                  <p class="text-[10px]">➔ 해당 노션 페이지의 우측 상단 <strong>···</strong> ➔ <strong>연결(Connect to)</strong>에서 1단계에서 만든 통합 봇을 추가하셨는지 확인해 주세요. 봇에게 페이지 접근 권한을 주어야만 읽고 쓸 수 있습니다.</p>
+                </div>
+                <div>
+                  <p class="font-bold text-ink">Q. '토큰 인증 실패 (401)' 오류가 떠요!</p>
+                  <p class="text-[10px]">➔ 입력한 토큰 앞뒤에 공백(띄어쓰기)이 들어가지 않았는지 확인해 주시고, <code class="font-mono text-ink">ntn_...</code> 또는 <code class="font-mono text-ink">secret_...</code> 전체 문자열이 복사되었는지 확인해 주세요.</p>
+                </div>
+                <div>
+                  <p class="font-bold text-ink">Q. 내가 직접 만든 표와도 연동되나요?</p>
+                  <p class="text-[10px]">➔ 네! 노션 페이지 안에 이미 '국어 모의고사', '수학 모의고사' 등의 표(데이터베이스)가 있다면 대시보드가 자동으로 감지하여 해당 표에 행을 추가합니다.</p>
+                </div>
+                <div>
+                  <p class="font-bold text-ink">Q. 표가 중복으로 만들어지지 않나요?</p>
+                  <p class="text-[10px]">➔ '과목별 표 자동 생성'을 누르면 이미 존재하는 과목 표는 건너뛰고 없는 과목 표만 추가 생성하므로 중복되지 않고 안전합니다.</p>
+                </div>
               </div>
             </details>
           </div>
@@ -4215,6 +4406,190 @@
       saveNotionConfig(newConfig);
       showToast("노션 연동 설정이 저장되었습니다. 💾");
       closeAccountSettingsModal();
+    }
+
+    function setSubjectPreset(preset) {
+      const container = document.getElementById('notion-subject-chips');
+      if (!container) return;
+      const cbs = container.querySelectorAll('input[type="checkbox"]');
+      cbs.forEach(cb => {
+        const val = cb.value;
+        if (preset === 'all') cb.checked = true;
+        else if (preset === 'none') cb.checked = false;
+        else if (preset === 'core') cb.checked = ['국어 모의고사', '국어 문학기출', '수학 모의고사', '영어 모의고사'].includes(val);
+        else if (preset === 'humanities') cb.checked = ['국어 모의고사', '국어 문학기출', '수학 모의고사', '영어 모의고사', '사회문화 모의고사', '생활과윤리 모의고사', '한국사 모의고사'].includes(val);
+        else if (preset === 'sciences') cb.checked = ['국어 모의고사', '국어 문학기출', '수학 모의고사', '영어 모의고사', '지구과학 모의고사', '생명과학 모의고사', '물리학 모의고사', '화학 모의고사', '한국사 모의고사'].includes(val);
+      });
+    }
+
+    async function createDefaultSubjectDatabases() {
+      const config = getNotionConfig() || {};
+      const tokenInput = document.getElementById('notion-token-input');
+      const targetInput = document.getElementById('notion-target-input');
+      const token = (tokenInput ? tokenInput.value : config.token || '').trim();
+      const rawTarget = (targetInput ? targetInput.value : config.target || '').trim();
+      const targetId = extractNotionId(rawTarget) || config.targetId;
+
+      if (!token) {
+        alert("먼저 1번에 노션 통합 토큰(API Key)을 입력해 주세요.\n\n발급 링크: https://www.notion.so/my-integrations");
+        return;
+      }
+      if (!targetId) {
+        alert("먼저 2번에 과목별 표를 생성할 내 노션 페이지 링크를 입력해 주세요.");
+        return;
+      }
+
+      // Collect selected subjects from chips
+      const chips = document.querySelectorAll('#notion-subject-chips input[type="checkbox"]:checked');
+      const selectedSubjects = Array.from(chips).map(c => c.value);
+
+      if (selectedSubjects.length === 0) {
+        alert("노션에 생성할 과목을 최소 1개 이상 선택해 주세요!");
+        return;
+      }
+
+      const btn = document.getElementById('btn-create-notion-dbs');
+      const btnText = document.getElementById('btn-create-notion-dbs-text');
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.textContent = "과목별 표 생성 중 (잠시만 기다려주세요)...";
+
+      try {
+        // 1. Verify target page access
+        const pageRes = await fetch(`${NOTION_API_BASE}/pages/${targetId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Notion-Version': NOTION_VERSION
+          }
+        });
+
+        if (!pageRes.ok) {
+          if (pageRes.status === 404) {
+            throw new Error(`노션 페이지를 찾을 수 없습니다(404).\n\n💡 해결 방법:\n해당 노션 페이지 우측 상단 '···' -> '연결(Connect to)'에서 통합 봇을 반드시 추가해 주셔야 합니다.`);
+          }
+          throw new Error(`노션 페이지 접근 실패 (HTTP ${pageRes.status})`);
+        }
+
+        // 2. Fetch existing databases via search
+        let existingDbs = [];
+        const searchRes = await fetch(`${NOTION_API_BASE}/search`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Notion-Version': NOTION_VERSION,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filter: { property: 'object', value: 'database' },
+            page_size: 100
+          })
+        });
+
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          existingDbs = (searchData.results || []).map(db => ({
+            id: db.id,
+            title: (db.title || []).map(t => t.plain_text).join('').trim(),
+            properties: db.properties || {}
+          }));
+        }
+
+        let createdCount = 0;
+        let skippedCount = 0;
+        const createdNames = [];
+
+        for (const subj of selectedSubjects) {
+          // Check if already exists (match by exact title)
+          const exists = existingDbs.some(d => d.title.trim().toLowerCase() === subj.trim().toLowerCase());
+          if (exists) {
+            skippedCount++;
+            continue;
+          }
+
+          // Create database
+          const dbPayload = {
+            parent: { type: 'page_id', page_id: targetId },
+            title: [{ type: 'text', text: { content: subj } }],
+            properties: {
+              '항목': { title: {} },
+              '완료': { checkbox: {} },
+              '비고': { rich_text: {} }
+            }
+          };
+
+          const createRes = await fetch(`${NOTION_API_BASE}/databases`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Notion-Version': NOTION_VERSION,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dbPayload)
+          });
+
+          if (!createRes.ok) {
+            const errData = await createRes.json().catch(() => ({}));
+            console.error(`Failed to create db '${subj}':`, errData);
+          } else {
+            createdCount++;
+            createdNames.push(subj);
+          }
+        }
+
+        // 3. Refresh databases list
+        const refreshRes = await fetch(`${NOTION_API_BASE}/search`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Notion-Version': NOTION_VERSION,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filter: { property: 'object', value: 'database' },
+            page_size: 100
+          })
+        });
+
+        let updatedDbs = [];
+        if (refreshRes.ok) {
+          const refData = await refreshRes.json();
+          updatedDbs = (refData.results || []).map(db => ({
+            id: db.id,
+            title: (db.title || []).map(t => t.plain_text).join('').trim() || '데이터베이스',
+            properties: db.properties || {}
+          }));
+        }
+
+        // Save updated config
+        const newConfig = {
+          ...config,
+          token,
+          target: rawTarget,
+          targetId,
+          databases: updatedDbs,
+          lastConnected: new Date().toISOString()
+        };
+        saveNotionConfig(newConfig);
+
+        // Update UI
+        const infoText = document.getElementById('notion-connected-text');
+        if (infoText) {
+          infoText.textContent = `✓ ${newConfig.workspaceName || '내 노션'} (과목별 표 ${updatedDbs.length}개 연동됨)`;
+        }
+
+        const msg = createdCount > 0 
+          ? `🎉 노션 페이지에 총 ${createdCount}개 과목 표가 자동 생성되었습니다! (${createdNames.join(', ')})\n\n이제 대시보드 자료를 자유롭게 추가해 보세요!`
+          : `선택하신 과목 표들이 이미 내 노션에 모두 존재합니다. (총 ${skippedCount}개 감지됨)`;
+
+        alert(msg);
+        showToast(`🎉 노션 과목별 표 세팅 완료! (총 ${updatedDbs.length}개 표 감지)`);
+
+      } catch (err) {
+        console.error("Auto DB create error:", err);
+        alert(`[과목별 표 생성 실패]\n\n${err.message || err}`);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = "🪄 선택한 과목 표 노션에 자동 생성하기";
+      }
     }
 
     async function handleAccountPasswordChange() {

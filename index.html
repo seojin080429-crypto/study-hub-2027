@@ -2075,10 +2075,12 @@
       );
 
       if (isCurrent) {
-        if (idKey) delete data.bookmarks[idKey];
-        if (nameKey) delete data.bookmarks[nameKey];
-        if (pathKey) delete data.bookmarks[pathKey];
-        delete data.bookmarks[key];
+        const keysToDelete = new Set([key, idKey, nameKey, pathKey].filter(Boolean));
+        for (const [k, v] of Object.entries(data.bookmarks)) {
+          if (keysToDelete.has(k) || (idKey && v && v.id === idKey) || (nameKey && v && v.title === nameKey) || (pathKey && v && v.path === pathKey)) {
+            delete data.bookmarks[k];
+          }
+        }
         showToast("'" + (title || nameKey || '').slice(0, 20) + "...' 출력 리스트에서 제외했습니다.");
       } else {
         const entry = {
@@ -3465,7 +3467,7 @@
     // ==========================================
     // AUTO UPDATE DETECTION & REFRESH BANNER
     // ==========================================
-    const CURRENT_APP_VERSION = 1793618956;
+    const CURRENT_APP_VERSION = 1793619138;
     let updateBannerDismissed = false;
 
     function showUpdateBanner() {
@@ -6289,8 +6291,10 @@
             const sData = JSON.parse(sRaw);
             if (sData && sData.bookmarks) {
               let changed = false;
-              for (const k of Object.keys(sData.bookmarks)) {
-                if (k.includes('정치와법') || k.includes('정법')) {
+              for (const [k, v] of Object.entries(sData.bookmarks)) {
+                const title = (v && v.title) ? v.title : '';
+                const path = (v && v.path) ? v.path : '';
+                if (k.includes('정치') || k.includes('정법') || title.includes('정치') || title.includes('정법') || path.includes('정치') || path.includes('정법')) {
                   delete sData.bookmarks[k];
                   changed = true;
                 }
@@ -6302,7 +6306,7 @@
             }
           }
         }
-        localStorage.setItem('SEOARCH_SCRUBBED_LAW_V1', 'true');
+        localStorage.setItem('SEOARCH_SCRUBBED_LAW_V2', 'true');
       }
     } catch(e) {}
 

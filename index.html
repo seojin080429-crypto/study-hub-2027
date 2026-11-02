@@ -278,10 +278,11 @@
             <span>⚙️</span><span class="hidden md:inline">관리자</span>
           </button>
           
-          <div class="flex items-center gap-1 px-2 py-0.5 rounded-pill bg-canvas-soft border border-hairline max-w-[65px] sm:max-w-[110px] flex-shrink-0" title="로그인된 계정">
-            <span class="text-[10px]">👤</span>
-            <span class="text-[11px] sm:text-xs font-bold text-ink truncate" id="user-name-display"></span>
-          </div>
+          <button onclick="openAccountSettingsModal()" class="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-pill bg-canvas-soft hover:bg-neutral-200 border border-hairline active:scale-95 text-ink transition-all cursor-pointer flex-shrink-0" title="계정 설정 및 노션 연동">
+            <span class="text-[10px] sm:text-xs">👤</span>
+            <span class="text-[11px] sm:text-xs font-bold text-ink truncate max-w-[55px] sm:max-w-[90px]" id="user-name-display"></span>
+            <span class="text-[9px] text-text-muted hover:text-ink">⚙️</span>
+          </button>
 
           <button onclick="handleLogout()" class="px-2 sm:px-2.5 py-1 rounded-pill bg-canvas-soft hover:bg-red-50 hover:text-red-600 active:scale-95 text-text-muted border border-hairline font-semibold text-[10px] sm:text-[11px] transition-all flex-shrink-0" title="로그아웃">
             로그아웃
@@ -519,6 +520,7 @@
             <span class="text-text-muted font-medium">정렬:</span>
             <select id="sort-select" onchange="handleSearch()" class="bg-canvas-soft border border-hairline text-ink rounded-pill px-3 py-1.5 text-xs focus:ring-1 focus:ring-ink outline-none cursor-pointer active:scale-95 transition-transform">
               <option value="MTIME_DESC" selected>최신순 (최근 등록자료)</option>
+              <option value="ROUND_ASC">회차순 (시즌1→시즌2... 1회→2회)</option>
               <option value="SOLVED_LAST">미풀이 우선 (푼 것은 뒤로)</option>
               <option value="BOOKMARK_FIRST">출력 리스트(찜) 우선</option>
               <option value="EXAM_DESC">시험 최신순 (2027→과거)</option>
@@ -563,6 +565,10 @@
         </div>
       </div>
       <div class="flex items-center gap-2 flex-wrap flex-shrink-0 w-full sm:w-auto justify-end">
+        <button onclick="exportBookmarksToNotion()" class="flex-1 sm:flex-initial px-4 py-2 bg-[#191919] hover:bg-black text-white font-bold rounded-pill transition-colors flex items-center justify-center gap-1.5 shadow-2xs" title="찜한 목록을 내 노션 계정의 체크리스트로 내보내기">
+          <span class="text-sm">📓</span>
+          <span>노션에 추가</span>
+        </button>
         <button onclick="copyAllBookmarkLinks()" class="flex-1 sm:flex-initial px-4 py-2 bg-amber-900 hover:bg-black text-white font-bold rounded-pill transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
           <span>출력 링크 일괄 복사</span>
@@ -951,6 +957,153 @@
             전송
           </button>
         </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: Account Settings & Notion Integration -->
+  <div id="modal-account-settings" class="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 transition-opacity">
+    <div class="bg-white border border-hairline rounded-container max-w-lg w-full flex flex-col text-ink overflow-hidden shadow-2xl max-h-[92vh]">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-4 sm:p-5 border-b border-hairline-soft flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⚙️</span>
+          <div>
+            <h3 class="font-bold text-sm sm:text-base text-ink tracking-tight">계정 설정 및 노션 연동</h3>
+            <p class="text-[11px] text-text-muted">내 프로필, 비밀번호 변경 및 노션 체크리스트 연동</p>
+          </div>
+        </div>
+        <button onclick="closeAccountSettingsModal()" class="w-8 h-8 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] text-text-muted hover:text-ink flex items-center justify-center text-sm font-bold transition-colors">&times;</button>
+      </div>
+
+      <!-- Settings Tabs -->
+      <div class="flex border-b border-hairline px-4 sm:px-5 bg-canvas-soft gap-2 text-xs font-semibold flex-shrink-0">
+        <button id="account-tab-btn-notion" onclick="switchAccountTab('notion')" class="py-2.5 px-3 sm:px-4 border-b-2 border-ink text-ink transition-colors flex items-center gap-1.5">
+          <span>📓</span><span>노션(Notion) 연동</span>
+        </button>
+        <button id="account-tab-btn-profile" onclick="switchAccountTab('profile')" class="py-2.5 px-3 sm:px-4 border-b-2 border-transparent text-text-muted hover:text-ink transition-colors flex items-center gap-1.5">
+          <span>👤</span><span>내 계정 / 비밀번호</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Area (Scrollable) -->
+      <div class="p-4 sm:p-6 overflow-y-auto flex flex-col gap-5 text-xs">
+        
+        <!-- ================= TAB 1: NOTION INTEGRATION ================= -->
+        <div id="account-tab-notion" class="flex flex-col gap-4">
+          
+          <!-- Notion Status Banner -->
+          <div class="bg-[#f7f6f3] border border-[#e3e2e0] rounded-2xl p-4 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 font-bold text-sm text-[#37352f]">
+                <span class="text-lg">📓</span>
+                <span>노션 체크리스트 연동</span>
+              </div>
+              <span id="notion-connection-badge" class="px-2.5 py-0.5 rounded-pill bg-neutral-200 text-neutral-700 font-bold text-[11px]">미연결</span>
+            </div>
+            <p class="text-xs text-[#787774] leading-relaxed">
+              찜해둔 수능 문제/해설 자료를 본인 노션 페이지의 체크리스트나 데이터베이스에 클릭 한 번으로 자동 등록할 수 있습니다.
+            </p>
+            <div id="notion-connected-info" class="hidden text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center justify-between">
+              <span id="notion-connected-text">연결된 워크스페이스: -</span>
+              <a id="notion-connected-link" href="#" target="_blank" class="underline hover:text-emerald-950 font-bold flex items-center gap-1">노션 열기 ↗</a>
+            </div>
+          </div>
+
+          <!-- Notion Configuration Inputs -->
+          <div class="flex flex-col gap-3.5">
+            <!-- 1. Notion API Token -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-bold text-ink">1. 노션 통합 토큰 (API Key)</label>
+                <span class="text-[10px] text-text-faint">Internal Integration Secret</span>
+              </div>
+              <input type="password" id="notion-token-input" placeholder="ntn_... 또는 secret_..." class="w-full bg-field border border-hairline rounded-tile px-3.5 py-2.5 text-xs text-ink font-mono outline-none focus:ring-2 focus:ring-ink focus:bg-white transition-all" />
+              <p class="text-[10px] text-text-muted mt-1 leading-normal">
+                기본 통합 봇(yubin) 토큰이 자동 적용되어 있으며, 필요 시 본인 전용 노션 토큰으로 변경할 수 있습니다.
+              </p>
+            </div>
+
+            <!-- 2. Target Page or Database URL/ID -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-bold text-ink">2. 내 노션 체크리스트 페이지 링크 (또는 데이터베이스 ID)</label>
+                <span class="text-[10px] text-text-faint">Page URL / DB ID</span>
+              </div>
+              <input type="text" id="notion-target-input" placeholder="예: https://www.notion.so/... 또는 3fd2597cfc1f8136a1c4e3c22bb56c56" class="w-full bg-field border border-hairline rounded-tile px-3.5 py-2.5 text-xs text-ink font-mono outline-none focus:ring-2 focus:ring-ink focus:bg-white transition-all" />
+              <p class="text-[10px] text-text-muted mt-1 leading-normal">
+                웹 브라우저의 노션 페이지 주소(URL)를 복사해서 그대로 붙여넣으시면 ID가 자동 추출됩니다.
+              </p>
+            </div>
+
+            <!-- Buttons: Test & Save -->
+            <div class="flex items-center gap-2 pt-1">
+              <button onclick="testNotionConnection()" id="btn-test-notion" class="flex-1 py-2.5 px-3 rounded-pill bg-canvas-soft hover:bg-[#eaeaea] active:scale-95 text-ink border border-hairline font-bold text-xs transition-all flex items-center justify-center gap-1.5">
+                <span>⚡</span>
+                <span id="btn-test-notion-text">연결 테스트 및 확인</span>
+              </button>
+              <button onclick="saveNotionSettings()" class="flex-1 py-2.5 px-3 rounded-pill bg-ink hover:bg-[#262626] active:scale-95 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5">
+                <span>💾</span>
+                <span>설정 저장</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Guide Card (Collapsible) -->
+          <div class="border border-hairline rounded-2xl p-3.5 bg-canvas-soft/70">
+            <details class="cursor-pointer text-xs">
+              <summary class="font-bold text-ink hover:underline select-none flex items-center justify-between">
+                <span>💡 노션 1분 연동 방법 (권한 허용 안내)</span>
+                <span class="text-[11px] text-text-muted">자세히 보기 ▾</span>
+              </summary>
+              <div class="pt-3 text-[11px] text-text-muted leading-relaxed flex flex-col gap-1.5 border-t border-hairline-soft mt-2.5">
+                <p>1. 내 노션에서 추가하고 싶은 페이지(예: <strong>과목별 체크리스트</strong>)를 엽니다.</p>
+                <p>2. 페이지 우측 상단 <strong>··· (더보기)</strong> 버튼 클릭 → <strong>연결 (Connect to)</strong> 선택</p>
+                <p>3. 목록에서 <strong>yubin</strong> (또는 본인 생성 봇)을 검색하여 추가(권한 허용)</p>
+                <p>4. 브라우저 주소창의 링크를 복사하여 위 <strong>[페이지 링크]</strong>에 붙여넣고 <strong>[연결 테스트]</strong> 클릭!</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+
+        <!-- ================= TAB 2: PROFILE & PASSWORD ================= -->
+        <div id="account-tab-profile" class="hidden flex flex-col gap-4">
+          <!-- Profile Info Box -->
+          <div class="bg-canvas-soft border border-hairline rounded-2xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-ink text-white flex items-center justify-center text-lg font-bold">
+                👤
+              </div>
+              <div>
+                <h4 id="account-profile-name" class="font-bold text-sm text-ink">-</h4>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span id="account-profile-role" class="px-2 py-0.2 rounded-pill bg-canvas-soft border border-hairline text-[10px] font-semibold text-text-muted">학생/수험생</span>
+                  <span class="text-[10px] text-emerald-700 font-semibold flex items-center gap-0.5">● 클라우드 동기화 켜짐</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Change Form -->
+          <div class="border-t border-hairline pt-4 flex flex-col gap-3">
+            <h4 class="font-bold text-xs text-ink">비밀번호 변경</h4>
+            <div>
+              <label class="block text-[11px] font-medium text-text-muted mb-1">새 비밀번호</label>
+              <input type="password" id="account-pw-new" placeholder="새 비밀번호 입력" class="w-full bg-field border border-hairline rounded-tile px-3.5 py-2.5 text-xs text-ink outline-none focus:ring-2 focus:ring-ink focus:bg-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-text-muted mb-1">새 비밀번호 확인</label>
+              <input type="password" id="account-pw-confirm" placeholder="새 비밀번호 다시 입력" class="w-full bg-field border border-hairline rounded-tile px-3.5 py-2.5 text-xs text-ink outline-none focus:ring-2 focus:ring-ink focus:bg-white" />
+            </div>
+            <button onclick="handleAccountPasswordChange()" class="w-full py-2.5 rounded-pill bg-ink hover:bg-[#262626] active:scale-95 text-white font-bold text-xs transition-all shadow-sm">
+              비밀번호 변경 저장
+            </button>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -2059,6 +2212,36 @@
     }
 
     // Search and Filter Engine
+    function parseSeasonAndRound(item) {
+      const name = item.n || '';
+      
+      let season = 0;
+      const sMatch = name.match(/(?:시즌|season|s)\s*([0-9]{1,2})/i);
+      if (sMatch) {
+        season = parseInt(sMatch[1], 10);
+      } else if (/파이널|final/i.test(name)) {
+        season = 90;
+      }
+
+      let round = 9999;
+      const rMatch = name.match(/([0-9]{1,3})\s*(?:회|호|주차)/);
+      if (rMatch) {
+        round = parseInt(rMatch[1], 10);
+      } else if (item.r) {
+        const irMatch = String(item.r).match(/([0-9]{1,3})/);
+        if (irMatch) round = parseInt(irMatch[1], 10);
+      }
+
+      let gubunRank = 3;
+      if (/문제|본문|시험지/.test(name) || (item.g && /문제/.test(item.g))) {
+        gubunRank = 1;
+      } else if (/해설|정답|답지|빠답|해답/.test(name) || (item.g && /해설|정답|답지/.test(item.g))) {
+        gubunRank = 2;
+      }
+
+      return { season, round, gubunRank };
+    }
+
     function handleSearch() {
       const query = document.getElementById('search-input').value.trim().toLowerCase();
       currentSearchText = query;
@@ -2152,7 +2335,34 @@
           return (b._matchCount || 0) - (a._matchCount || 0);
         }
 
-        if (sortOrder === 'SOLVED_LAST') {
+        if (sortOrder === 'ROUND_ASC') {
+          const aSR = parseSeasonAndRound(a);
+          const bSR = parseSeasonAndRound(b);
+
+          const brandA = a.b || '';
+          const brandB = b.b || '';
+          if (brandA !== brandB) {
+            const bCmp = brandA.localeCompare(brandB, 'ko');
+            if (bCmp !== 0) return bCmp;
+          }
+
+          // 1. 시즌 우선배치 (시즌1 -> 시즌2 -> 시즌3...)
+          if (aSR.season !== bSR.season) {
+            return aSR.season - bSR.season;
+          }
+
+          // 2. 회차 나중배치 (1회 -> 2회 -> 3회...)
+          if (aSR.round !== bSR.round) {
+            return aSR.round - bSR.round;
+          }
+
+          // 3. 문제편 우선배치 (문제편 -> 해설편)
+          if (aSR.gubunRank !== bSR.gubunRank) {
+            return aSR.gubunRank - bSR.gubunRank;
+          }
+
+          return a.n.localeCompare(b.n, 'ko', { numeric: true, sensitivity: 'base' });
+        } else if (sortOrder === 'SOLVED_LAST') {
           const isSolvedA = Boolean(studyData.solved && studyData.solved[a.id || a.n]);
           const isSolvedB = Boolean(studyData.solved && studyData.solved[b.id || b.n]);
           if (isSolvedA !== isSolvedB) return isSolvedA ? 1 : -1;
@@ -3278,6 +3488,28 @@
           return;
         }
 
+        // Also sync Notion config from cloud
+        if (typeof getNotionConfig === 'function') {
+          supabaseClient
+            .from('account_requests')
+            .select('*')
+            .eq('relation', 'notion_config')
+            .eq('name', username)
+            .limit(1)
+            .then(({ data: nRecords }) => {
+              if (nRecords && nRecords.length > 0) {
+                const nPayload = (Array.isArray(nRecords[0].messages) && nRecords[0].messages[0]) ? nRecords[0].messages[0] : (nRecords[0].messages || {});
+                if (nPayload.notion_config) {
+                  const localCfg = getNotionConfig();
+                  if (!localCfg.targetId && nPayload.notion_config.targetId) {
+                    localStorage.setItem(getNotionConfigKey(), JSON.stringify(nPayload.notion_config));
+                  }
+                }
+              }
+            })
+            .catch(() => {});
+        }
+
         const localData = getStudyData();
 
         if (!records || records.length === 0) {
@@ -3437,7 +3669,7 @@
         if (gate) gate.classList.add('hidden');
         if (mainApp) mainApp.classList.remove('hidden');
         if (profile) profile.classList.remove('hidden');
-        if (nameDisp) nameDisp.textContent = `👤 ${user.name}님`;
+        if (nameDisp) nameDisp.textContent = `${user.name}님`;
 
         // Admin badge & button visibility
         if (user.is_admin || user.username === '정서진') {
@@ -3621,6 +3853,504 @@
     const STORAGE_KEY_MY_REQUEST_ID = 'suneung_my_active_request_id';
     const STORAGE_KEY_LOCAL_REQUESTS = 'suneung_account_requests_v2';
     let currentActiveRequestId = null;
+    // ==========================================
+    // ACCOUNT SETTINGS & NOTION INTEGRATION
+    // ==========================================
+    const DEFAULT_NOTION_TOKEN = atob('bnRuXzEwMDkxMjk3ODIzN1FXd2ZlN04yQUJ1VVR0amtRTHhodlAzM1RVN1ZmTUY3Ym4=');
+    const NOTION_API_BASE = 'https://api.notion.com/v1';
+    const NOTION_VERSION = '2022-06-28';
+
+    function extractNotionId(input) {
+      if (!input) return '';
+      const str = String(input).trim();
+      const mUuid = str.match(/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+      if (mUuid) return mUuid[1].toLowerCase();
+      const mHex = str.match(/([0-9a-fA-F]{32})(?:[/?#]|$)/);
+      if (mHex) {
+        const h = mHex[1].toLowerCase();
+        return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+      }
+      return str;
+    }
+
+    function getNotionConfigKey() {
+      const u = getCurrentUser()?.username || 'guest';
+      return `seoarch_notion_config_${u}`;
+    }
+
+    function getNotionConfig() {
+      const key = getNotionConfigKey();
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) return JSON.parse(raw);
+      } catch(e) {}
+      return {
+        token: DEFAULT_NOTION_TOKEN,
+        target: '',
+        targetId: '',
+        workspaceName: '',
+        botName: '',
+        lastConnected: null
+      };
+    }
+
+    function saveNotionConfig(config) {
+      const key = getNotionConfigKey();
+      try {
+        localStorage.setItem(key, JSON.stringify(config));
+      } catch(e) {}
+      // Sync to cloud Supabase
+      const user = getCurrentUser();
+      if (supabaseClient && user?.username && user.username !== 'guest') {
+        const payloadMessages = [{
+          notion_config: config,
+          updated_at: new Date().toISOString()
+        }];
+        supabaseClient
+          .from('account_requests')
+          .select('id')
+          .eq('relation', 'notion_config')
+          .eq('name', user.username)
+          .limit(1)
+          .then(({ data: existing }) => {
+            if (existing && existing.length > 0) {
+              return supabaseClient
+                .from('account_requests')
+                .update({ messages: payloadMessages, status: 'synced' })
+                .eq('id', existing[0].id);
+            } else {
+              return supabaseClient
+                .from('account_requests')
+                .insert([{
+                  name: user.username,
+                  contact: 'notion_sync',
+                  relation: 'notion_config',
+                  status: 'synced',
+                  messages: payloadMessages
+                }]);
+            }
+          })
+          .catch(err => console.warn('Notion config cloud sync error:', err));
+      }
+    }
+
+    function openAccountSettingsModal() {
+      const modal = document.getElementById('modal-account-settings');
+      if (!modal) return;
+
+      const user = getCurrentUser();
+      const uName = user?.username || '게스트';
+      const nameEl = document.getElementById('account-profile-name');
+      const roleEl = document.getElementById('account-profile-role');
+      if (nameEl) nameEl.textContent = `${uName}님`;
+      if (roleEl) roleEl.textContent = (user && (user.is_admin || uName === '정서진')) ? '👑 최고 관리자' : '🎓 학생 / 수험생';
+
+      const config = getNotionConfig();
+      const tokenInput = document.getElementById('notion-token-input');
+      const targetInput = document.getElementById('notion-target-input');
+      const badge = document.getElementById('notion-connection-badge');
+      const infoBox = document.getElementById('notion-connected-info');
+      const infoText = document.getElementById('notion-connected-text');
+      const infoLink = document.getElementById('notion-connected-link');
+
+      if (tokenInput) tokenInput.value = config.token || DEFAULT_NOTION_TOKEN;
+      if (targetInput) targetInput.value = config.target || '';
+
+      if (config.lastConnected && config.workspaceName) {
+        if (badge) {
+          badge.className = "px-2.5 py-0.5 rounded-pill bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-[11px]";
+          badge.textContent = `✓ 연결됨 (${config.workspaceName})`;
+        }
+        if (infoBox) {
+          infoBox.classList.remove('hidden');
+          infoBox.classList.add('flex');
+        }
+        if (infoText) {
+          infoText.textContent = `✓ ${config.workspaceName} [${config.targetTitle || '체크리스트'}]`;
+        }
+        if (infoLink) {
+          infoLink.href = config.target?.startsWith('http') ? config.target : `https://www.notion.so/${(config.targetId || '').replace(/-/g, '')}`;
+        }
+      } else {
+        if (badge) {
+          badge.className = "px-2.5 py-0.5 rounded-pill bg-neutral-200 text-neutral-700 font-bold text-[11px]";
+          badge.textContent = "미연결";
+        }
+        if (infoBox) {
+          infoBox.classList.add('hidden');
+          infoBox.classList.remove('flex');
+        }
+      }
+
+      switchAccountTab('notion');
+      modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeAccountSettingsModal() {
+      const modal = document.getElementById('modal-account-settings');
+      if (modal) modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    function switchAccountTab(tab) {
+      const tabNotion = document.getElementById('account-tab-notion');
+      const tabProfile = document.getElementById('account-tab-profile');
+      const btnNotion = document.getElementById('account-tab-btn-notion');
+      const btnProfile = document.getElementById('account-tab-btn-profile');
+
+      if (tab === 'notion') {
+        if (tabNotion) tabNotion.classList.remove('hidden');
+        if (tabProfile) tabProfile.classList.add('hidden');
+        if (btnNotion) {
+          btnNotion.className = 'py-2.5 px-3 sm:px-4 border-b-2 border-ink text-ink transition-colors flex items-center gap-1.5';
+        }
+        if (btnProfile) {
+          btnProfile.className = 'py-2.5 px-3 sm:px-4 border-b-2 border-transparent text-text-muted hover:text-ink transition-colors flex items-center gap-1.5';
+        }
+      } else {
+        if (tabNotion) tabNotion.classList.add('hidden');
+        if (tabProfile) tabProfile.classList.remove('hidden');
+        if (btnNotion) {
+          btnNotion.className = 'py-2.5 px-3 sm:px-4 border-b-2 border-transparent text-text-muted hover:text-ink transition-colors flex items-center gap-1.5';
+        }
+        if (btnProfile) {
+          btnProfile.className = 'py-2.5 px-3 sm:px-4 border-b-2 border-ink text-ink transition-colors flex items-center gap-1.5';
+        }
+      }
+    }
+
+    async function testNotionConnection() {
+      const tokenInput = document.getElementById('notion-token-input');
+      const targetInput = document.getElementById('notion-target-input');
+      const btn = document.getElementById('btn-test-notion');
+      const btnText = document.getElementById('btn-test-notion-text');
+      const badge = document.getElementById('notion-connection-badge');
+      const infoBox = document.getElementById('notion-connected-info');
+      const infoText = document.getElementById('notion-connected-text');
+      const infoLink = document.getElementById('notion-connected-link');
+
+      const token = (tokenInput ? tokenInput.value : '').trim() || DEFAULT_NOTION_TOKEN;
+      const rawTarget = (targetInput ? targetInput.value : '').trim();
+      const targetId = extractNotionId(rawTarget);
+
+      if (!token) {
+        alert("노션 통합 토큰(API Key)을 입력해 주세요.");
+        return;
+      }
+
+      if (btnText) btnText.textContent = "연결 확인 중...";
+      if (btn) btn.disabled = true;
+
+      try {
+        // 1. Verify Bot Token & Workspace via /v1/users/me
+        const userRes = await fetch(`${NOTION_API_BASE}/users/me`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Notion-Version': NOTION_VERSION
+          }
+        });
+
+        if (!userRes.ok) {
+          throw new Error(`토큰 인증 실패 (HTTP ${userRes.status}). 올바른 노션 토큰인지 확인해 주세요.`);
+        }
+
+        const userData = await userRes.json();
+        const botName = userData.name || 'Bot';
+        const wsName = userData.bot?.workspace_name || 'Notion Workspace';
+
+        let targetType = 'unknown';
+        let targetTitle = '';
+
+        // 2. If target ID provided, verify target page or database access
+        if (targetId) {
+          // Try database first
+          const dbRes = await fetch(`${NOTION_API_BASE}/databases/${targetId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Notion-Version': NOTION_VERSION
+            }
+          });
+
+          if (dbRes.ok) {
+            const dbData = await dbRes.json();
+            targetType = 'database';
+            targetTitle = dbData.title?.map(t => t.plain_text).join('') || '데이터베이스';
+          } else {
+            // Try page
+            const pgRes = await fetch(`${NOTION_API_BASE}/pages/${targetId}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Notion-Version': NOTION_VERSION
+              }
+            });
+
+            if (pgRes.ok) {
+              const pgData = await pgRes.json();
+              targetType = 'page';
+              const titleProp = Object.values(pgData.properties || {}).find(p => p.type === 'title');
+              targetTitle = titleProp?.title?.map(t => t.plain_text).join('') || '노션 페이지';
+            } else if (pgRes.status === 404) {
+              throw new Error(`노션 페이지를 찾을 수 없습니다(404).\n\n💡 해결 방법:\n해당 노션 페이지 우측 상단 '···' -> '연결(Connect to)'에서 통합 봇('${botName}')을 반드시 추가해 주셔야 합니다.`);
+            } else {
+              throw new Error(`노션 페이지 접근 오류 (HTTP ${pgRes.status})`);
+            }
+          }
+        }
+
+        // Update UI
+        if (badge) {
+          badge.className = "px-2.5 py-0.5 rounded-pill bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-[11px]";
+          badge.textContent = `✓ 연결 성공 (${wsName})`;
+        }
+        if (infoBox) {
+          infoBox.classList.remove('hidden');
+          infoBox.classList.add('flex');
+        }
+        if (infoText) {
+          const typeStr = targetType === 'database' ? '데이터베이스' : (targetType === 'page' ? '페이지' : '워크스페이스');
+          infoText.textContent = `✓ ${wsName} [${typeStr}: ${targetTitle || '연결됨'}]`;
+        }
+        if (infoLink) {
+          infoLink.href = rawTarget.startsWith('http') ? rawTarget : `https://www.notion.so/${targetId.replace(/-/g, '')}`;
+        }
+
+        // Auto save tested config
+        const config = {
+          token,
+          target: rawTarget,
+          targetId,
+          targetType,
+          targetTitle,
+          workspaceName: wsName,
+          botName,
+          lastConnected: new Date().toISOString()
+        };
+        saveNotionConfig(config);
+        showToast(`🎉 노션(${wsName}) 연결이 성공적으로 확인되었습니다!`);
+
+      } catch (err) {
+        console.error("Notion connection test error:", err);
+        if (badge) {
+          badge.className = "px-2.5 py-0.5 rounded-pill bg-red-100 border border-red-300 text-red-800 font-bold text-[11px]";
+          badge.textContent = "연결 실패";
+        }
+        alert(`[노션 연동 확인 실패]\n\n${err.message || err}`);
+      } finally {
+        if (btnText) btnText.textContent = "연결 테스트 및 확인";
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function saveNotionSettings() {
+      const tokenInput = document.getElementById('notion-token-input');
+      const targetInput = document.getElementById('notion-target-input');
+      const token = (tokenInput ? tokenInput.value : '').trim() || DEFAULT_NOTION_TOKEN;
+      const rawTarget = (targetInput ? targetInput.value : '').trim();
+      const targetId = extractNotionId(rawTarget);
+
+      const oldConfig = getNotionConfig();
+      const newConfig = {
+        ...oldConfig,
+        token,
+        target: rawTarget,
+        targetId
+      };
+      saveNotionConfig(newConfig);
+      showToast("노션 연동 설정이 저장되었습니다. 💾");
+      closeAccountSettingsModal();
+    }
+
+    async function handleAccountPasswordChange() {
+      const p1 = document.getElementById('account-pw-new').value.trim();
+      const p2 = document.getElementById('account-pw-confirm').value.trim();
+
+      if (!p1) {
+        alert("새 비밀번호를 입력해주세요!");
+        return;
+      }
+      if (p1 === '1234') {
+        alert("기존 초기 비밀번호(1234)와 다른 새로운 비밀번호를 설정해주세요!");
+        return;
+      }
+      if (p1 !== p2) {
+        alert("새 비밀번호 확인이 일치하지 않습니다!");
+        return;
+      }
+
+      const cur = getCurrentUser();
+      if (!cur) return;
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('app_users')
+            .update({ password: p1, must_change_password: false })
+            .eq('username', cur.username);
+        } catch(e) {
+          console.error("Supabase pw update err:", e);
+        }
+      }
+
+      const localDb = initLocalUsersDb();
+      if (localDb[cur.username]) {
+        localDb[cur.username].password = p1;
+        localDb[cur.username].must_change = false;
+        saveLocalUsersDb(localDb);
+      }
+
+      cur.must_change = false;
+      saveCurrentUser(cur);
+      showToast("비밀번호가 성공적으로 변경되었습니다. 🔒");
+      closeAccountSettingsModal();
+    }
+
+    async function exportBookmarksToNotion() {
+      const data = getStudyData();
+      const items = CATALOG.filter(it => isItemBookmarked(data.bookmarks, it));
+
+      if (items.length === 0) {
+        alert("출력할 거 리스트에 담긴 자료가 없습니다.\n먼저 자료 카드의 '☆ 찜' 버튼을 눌러 추가해 주세요.");
+        return;
+      }
+
+      const config = getNotionConfig();
+      if (!config || !config.token || !config.targetId) {
+        const proceed = confirm("노션 연동 설정이 아직 완료되지 않았습니다.\n계정 설정에서 노션 페이지 링크를 먼저 등록하시겠습니까?");
+        if (proceed) {
+          openAccountSettingsModal();
+        }
+        return;
+      }
+
+      const confirmMsg = `출력할 거 리스트의 총 ${items.length}개 수능 자료를 내 노션 체크리스트에 추가하시겠습니까?\n\n- 대상: ${config.workspaceName || '내 노션'} (${config.targetTitle || '체크리스트'})\n- 자료 수: ${items.length}개`;
+      if (!confirm(confirmMsg)) return;
+
+      showToast(`📓 노션으로 ${items.length}개 자료를 전송하는 중...`);
+
+      try {
+        const token = config.token;
+        const targetId = config.targetId;
+        const targetType = config.targetType || 'page';
+
+        if (targetType === 'database') {
+          // Fetch database schema first to inspect property names
+          const dbRes = await fetch(`${NOTION_API_BASE}/databases/${targetId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Notion-Version': NOTION_VERSION
+            }
+          });
+          if (!dbRes.ok) throw new Error("데이터베이스 정보를 읽어오지 못했습니다.");
+          const dbData = await dbRes.json();
+          const props = dbData.properties || {};
+
+          // Detect property keys
+          let titleKey = Object.keys(props).find(k => props[k].type === 'title') || '항목';
+          let checkboxKey = Object.keys(props).find(k => props[k].type === 'checkbox');
+          let selectKey = Object.keys(props).find(k => props[k].type === 'select');
+          let urlKey = Object.keys(props).find(k => props[k].type === 'url');
+          let textKey = Object.keys(props).find(k => props[k].type === 'rich_text' && (k.includes('비고') || k.includes('메모')));
+
+          let addedCount = 0;
+          for (const it of items) {
+            const bm = getItemBookmarkInfo(data.bookmarks, it) || {};
+            const link = it.id ? `https://drive.google.com/file/d/${it.id}/view?usp=sharing` : '';
+            const pagePayload = {
+              parent: { database_id: targetId },
+              properties: {
+                [titleKey]: {
+                  title: [{ text: { content: it.n } }]
+                }
+              }
+            };
+            if (checkboxKey) {
+              pagePayload.properties[checkboxKey] = { checkbox: false };
+            }
+            if (urlKey && link) {
+              pagePayload.properties[urlKey] = { url: link };
+            }
+            if (selectKey && (it.ds || it.c)) {
+              pagePayload.properties[selectKey] = { select: { name: it.ds || it.c } };
+            }
+            if (textKey && bm.memo) {
+              pagePayload.properties[textKey] = { rich_text: [{ text: { content: bm.memo } }] };
+            }
+
+            const res = await fetch(`${NOTION_API_BASE}/pages`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Notion-Version': NOTION_VERSION,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(pagePayload)
+            });
+            if (res.ok) addedCount++;
+          }
+          showToast(`🎉 노션 데이터베이스에 ${addedCount}개 자료 추가 완료!`);
+        } else {
+          // Page Mode: Append to_do blocks
+          const chunks = [];
+          for (let i = 0; i < items.length; i += 80) {
+            chunks.push(items.slice(i, i + 80));
+          }
+
+          let addedCount = 0;
+          for (const chunk of chunks) {
+            const blocks = chunk.map(it => {
+              const bm = getItemBookmarkInfo(data.bookmarks, it) || {};
+              const link = it.id ? `https://drive.google.com/file/d/${it.id}/view?usp=sharing` : null;
+              const memoSuffix = bm.memo ? ` [메모: ${bm.memo}]` : '';
+              const label = `[${it.c || '과목'} / ${it.b || '기타'}] ${it.n}${memoSuffix}`;
+
+              return {
+                object: 'block',
+                type: 'to_do',
+                to_do: {
+                  rich_text: [
+                    {
+                      type: 'text',
+                      text: {
+                        content: label,
+                        ...(link ? { link: { url: link } } : {})
+                      }
+                    }
+                  ],
+                  checked: false
+                }
+              };
+            });
+
+            const res = await fetch(`${NOTION_API_BASE}/blocks/${targetId}/children`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Notion-Version': NOTION_VERSION,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ children: blocks })
+            });
+
+            if (!res.ok) {
+              const errJson = await res.json().catch(() => ({}));
+              throw new Error(errJson.message || `HTTP ${res.status}`);
+            }
+            addedCount += chunk.length;
+          }
+
+          showToast(`🎉 노션 체크리스트에 ${addedCount}개 자료 추가 완료!`);
+        }
+
+      } catch (err) {
+        console.error("Notion export error:", err);
+        alert(`[노션 추가 실패]\n\n${err.message || err}\n\n💡 노션 페이지 우측 상단 '···' -> '연결(Connect to)'에서 통합 봇이 허용되어 있는지 확인해 주세요.`);
+      }
+    }
+
     let cachedActiveRequestObj = null;
 
     function getLocalAccountRequests() {

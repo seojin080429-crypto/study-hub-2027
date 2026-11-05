@@ -3596,7 +3596,7 @@
     // ==========================================
     // AUTO UPDATE DETECTION & REFRESH BANNER
     // ==========================================
-    const CURRENT_APP_VERSION = 1793871237;
+    const CURRENT_APP_VERSION = 1793871295;
     let updateBannerDismissed = false;
 
     function showUpdateBanner() {
@@ -4902,7 +4902,7 @@
       try {
         await autoOrganizeNotionDashboardLayout(targetId, token);
         showToast("✨ 노션 대시보드가 가로 3열 레이아웃으로 완벽하게 정렬되었습니다!");
-        alert("✨ 노션 대시보드가 가로줄마다 4표씩 깔끔하게 정렬되었습니다! 노션 페이지를 확인해 보세요.");
+        alert("✨ 노션 대시보드가 가로줄마다 3표씩 깔끔하게 정렬되었습니다! 노션 페이지를 확인해 보세요.");
       } catch (err) {
         console.error("Layout reorganize error:", err);
         alert(`레이아웃 정렬 실패: ${err.message || err}`);

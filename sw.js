@@ -1,4 +1,4 @@
-const CACHE_NAME = 'seoarch-v2';
+const CACHE_NAME = 'seoarch-v4';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
